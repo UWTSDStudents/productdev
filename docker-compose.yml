@@ -1,0 +1,75 @@
+version: "3.9"
+services:
+  webapp:
+    depends_on:
+      - api
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    image: nginx-webserver
+    restart: always
+    ports: 
+      - "81:80"
+    networks: 
+      - dbnetwork
+    volumes:
+      - ./webapp:/usr/share/nginx
+  api:
+    depends_on:
+      - mssql
+    build:
+      context: ./webapi
+      dockerfile: Dockerfile
+      target: nodejs-dev
+    image: node-js-api
+    restart: always
+    ports: 
+      - "1340:80"
+    networks: 
+      - dbnetwork 
+    volumes:  
+      - ./webapi:/var/www/node
+  mssql:
+    hostname: mssql
+    #image: mcr.microsoft.com/azure-sql-edge:latest
+    # https://hub.docker.com/_/microsoft-mssql-server
+    image:  mcr.microsoft.com/mssql/server:2022-latest
+    restart: always
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_PID : Developer
+      MSSQL_SA_PASSWORD: Password@123
+    networks: 
+      - dbnetwork
+    volumes:
+      - ./mssql-data:/var/opt/mssql/data
+      - ./log:/var/opt/mssql/log
+      - ./secrets-data:/var/opt/mssql/secrets
+  sqlcmd:
+    container_name: az-sqlcmd
+    depends_on:
+      - mssql
+    restart: always
+    build:
+      context: ./sqlcmd
+      dockerfile: Dockerfile
+    image: sqlcmd
+    stdin_open: true
+    tty: true
+    environment:
+      MSSQL_SERVER: mssql
+      MSSQL_SA_PASSWORD: Password@123
+      MSSQL_DATABASE: mydb
+      MSSQL_USER_NAME: docker 
+      MSSQL_USER_PASSWORD: Password@123
+    volumes:
+      - ./init.sh:/usr/src/app/init.sh
+      - ./init.sql:/usr/src/app/init.sql
+    command: /usr/src/app/wait_for_it.sh mssql:1433 -t 120 -s -- /usr/src/app/init.sh
+    # command: /bin/bash
+    networks: 
+      - dbnetwork       
+networks:
+    dbnetwork:

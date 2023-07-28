@@ -1,0 +1,6 @@
+[submodule "webapi"]
+	path = webapi
+	url = https://github.com/UWTSDStudents/productwebapi
+[submodule "webapp"]
+	path = webapp
+	url = https://github.com/UWTSDStudents/productwebapp
