@@ -13,3 +13,6 @@ The webapp, api, database and bash (az-sqlcmd) containers are all started usint 
 The database takes sometime to start, therefore the az-sqlcmd container has to wait sometime before it can execute commands.
 For the first execution of docker-compose up, you have to wait for the execution of the commands that create the initial user, database
 and Product table.
+
+Note: the webapp and webapi are committed separately to GitHub and pulled here as submodules.
+For a description of submodules, see https://git-scm.com/book/en/v2/Git-Tools-Submodules
