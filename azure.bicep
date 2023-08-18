@@ -44,7 +44,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 }
 
 // Create the static web app
-module swa 'bicep-modules/static-web-app.bicep' = {
+module swa 'bicep_modules/static-web-app.bicep' = {
   name: '${swaName}-module'
   scope: rg
   params: {
@@ -57,7 +57,7 @@ module swa 'bicep-modules/static-web-app.bicep' = {
 }
 
 // Create the node.js web app
-module app 'bicep-modules/web-app-github-linux.bicep' = {
+module app 'bicep_modules/web-app-github-linux.bicep' = {
   name: '${webappName}-module'
   scope: rg
   params: {
