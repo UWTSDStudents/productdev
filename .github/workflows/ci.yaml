@@ -1,0 +1,77 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: 'Build and deploy a webapp Bicep infrastructure to Azure'
+
+# Using workload identity federation to authenticate to Azure
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  push:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+      
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+      # Azure credentials are stored in GitHub secrets
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
+    - name: 'Setup the Application Registration Object'
+      run: |
+        chmod +x ./bicep-modules/cmd-scripts/*.azcli
+        returned=$(./bicep-modules/cmd-scripts/create-app-registration.azcli 'myAppObj')
+
+        # Split the result into an array
+        IFS=',' read -ra results <<< "$returned"
+
+        # Store the returned values in environment variables
+        # echo "APP_CLIENT_ID=${results[0]}" >> "$GITHUB_ENV"
+        appClientId=${results[0]}
+        echo "PRINCIPAL_ID=${results[1]}" >> "$GITHUB_ENV"
+
+        # Specify the federated credentials for GitHub, so that the web app can authenticate to GitHub
+        # github.repository provides the owner and repo name e.g. octocat/Hello-World
+        repo=${{ github.repository }}
+        repo="${repo//\//\\/}"
+        branch=${{ github.ref_name }}
+        fedCredsName="AppCreds"
+        fedCredsIssuer="https:\/\/token.actions.githubusercontent.com"
+        fedCredsSubject="repo:${repo}:ref:refs\/heads\/${branch}"
+        fedCredsAudiences="api:\/\/AzureADTokenExchange"
+        ./bicep-modules/cmd-scripts/set-app-fed-creds.azcli $appClientId $fedCredsName $fedCredsIssuer $fedCredsSubject $fedCredsAudiences
+
+    - name: 'Deploy the Azure infrastructure using Bicep'
+      # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
+      uses: azure/arm-deploy@v1
+      with:
+        scope: subscription
+        subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        # This resource group contains the deloyment objects (i.e. deployment history)
+        resourceGroupName: ${{ secrets.AZURE_DEPLOYMENT_RG }}
+        template: ./azure.bicep
+        parameters: ./azure.bicepparam principalId=${{ env.PRINCIPAL_ID }} rgName=${{ secrets.AZURE_RG }}
+        # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
+        # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
+        # to stream warning or progress info.
+        failedOnStdErr: false
+        deploymentName: myAppBicepDeployment
+
+    - name: Azure logout
+      run: |
+        az logout
