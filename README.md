@@ -18,8 +18,8 @@ Note: the webapp, webapi and bicep_modules are committed separately to GitHub an
 Each submodule is created as a separate branch on their respective repositories.
 For a description of submodules, see https://git-scm.com/book/en/v2/Git-Tools-Submodules
 Created like this:
-$ git submodule add <remote_url> <destination_folder>
-e.g. git submodule add https://github.com/UWTSDStudents/productwebapp webapp
+$ git submodule add -b <branch> <remote_url> <destination_folder>
+e.g. git submodule add -b main https://github.com/UWTSDStudents/productwebapp webapp
 
 You can remove a submodule like this:
 ```

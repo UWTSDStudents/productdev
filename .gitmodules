@@ -1,9 +1,13 @@
 [submodule "webapi"]
 	path = webapi
 	url = https://github.com/UWTSDStudents/productwebapi
+	branch = main
+	update = merge
 [submodule "bicep_modules"]
 	path = bicep_modules
 	url = https://github.com/UWTSDSoACInfrastructure/BicepModules
+	branch = main
+	update = merge
 [submodule "webapp"]
 	path = webapp
 	url = https://github.com/UWTSDStudents/productwebapp
