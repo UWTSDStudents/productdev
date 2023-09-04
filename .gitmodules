@@ -4,3 +4,6 @@
 [submodule "bicep_modules"]
 	path = bicep_modules
 	url = https://github.com/UWTSDSoACInfrastructure/BicepModules
+[submodule "webapp"]
+	path = webapp
+	url = https://github.com/UWTSDStudents/productwebapp
