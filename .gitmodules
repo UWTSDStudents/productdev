@@ -7,3 +7,5 @@
 [submodule "webapp"]
 	path = webapp
 	url = https://github.com/UWTSDStudents/productwebapp
+	branch = main
+	update = merge
