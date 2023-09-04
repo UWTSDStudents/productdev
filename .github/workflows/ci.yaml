@@ -37,6 +37,10 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: true
+        # A token is needed to checkout private submodules
+        # Since we pretty much need the same access, we can use the same token as for the SWA
+        # since the token is associated with the GitHub account rather than a repo
+        token: ${{ secrets.SWA_GITHUB_PERSONAL_TOKEN }}  
       
     - name: 'Az CLI login'
       uses: azure/login@v1
