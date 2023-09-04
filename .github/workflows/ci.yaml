@@ -42,6 +42,9 @@ jobs:
       uses: azure/login@v1
       with:
       # Azure credentials are stored in GitHub secrets
+      # Create an rbac service principal like this:
+      # az ad sp create-for-rbac --name "CICD" --role contributor --scopes /subscriptions/<SUBSCRIPTION_ID> --sdk-auth
+      # This also returns the required credentials: client Id, client secret, tenant Id, subscription Id
         client-id: ${{secrets.AZURE_CLIENT_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
