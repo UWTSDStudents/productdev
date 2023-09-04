@@ -1,0 +1,105 @@
+# Path: .github\workflows\code-continuous-deployment.yaml
+# For continuous deploy of web app code create a workflow file like this:
+# Use site credentials and a additional service principal 
+# See https://learn.microsoft.com/en-us/azure/app-service/deploy-continuous-deployment?tabs=github#authenticate-by-using-a-service-principal
+# Note: mask the credentials so they are not shown in workflow logs which would not be good for secret values.
+
+#
+# NOTE: GitHub secrets must be manually added in GitHub.
+# API_GITHUB_PERSONAL_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub.
+# Must have both workflow and admin:org scope to allow a push operation
+# This is created under GitHub Settings > Developer Settings > Personal access tokens > Tokens (Classic)
+# AZURE_CLIENT_ID: Application client ID
+# AZURE_TENANT_ID: Tenant ID
+# AZURE_SUBSCRIPTION_ID: Subscription ID
+# # These are created in the repo itself under Settings > Secrets and Variables > Actions > New repository secret
+#
+
+name: 'Add site credentials and deploy web app code'
+
+# Using workload identity federation to authenticate to Azure
+permissions:
+  id-token: write
+  contents: read
+
+# Trigger the workflow when a change is made to this workflow file
+on:
+  push:
+    branches:
+    - "**"
+    paths: 
+    - '.github/workflows/code-continuous-deployment.yml'
+
+jobs:
+  # Steps within a job are always executed sequentially!
+  build:
+    runs-on: ubuntu-latest
+    env: 
+      CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
+      CI_COMMIT_AUTHOR: Continuous Integration
+    
+    steps:  
+    # Checkout the web app code repo 
+    # If you are using this workflow file in the code repo itself then you do
+    # not need the repostory and ref parameters   
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v3
+      with:
+        repository: 'UWTSDStudents/productwebapi'
+        ref: 'main'
+
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+      # Azure credentials are stored in GitHub secrets
+        client-id: ${{secrets.AZURE_CLIENT_ID}}
+        tenant-id: ${{secrets.AZURE_TENANT_ID}}
+        subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+
+    # Create a service principal for the web app with the site credenitals
+    # Mask the credentials so they are not shown in workflow logs
+    - name: 'Create the site credentials'
+      uses: azure/CLI@v1 token
+      id: site-creds
+      with:
+          inlineScript: |
+              SITE_CREDENTIALS=siteCreds=$(az ad sp create-for-rbac --name "myAppDeployAuth" --role contributor —scopes /subscriptions/<subscription-id>/resourceGroups/<group-name>/providers/Microsoft.Web/sites/<app-name> —sdk-auth)
+              echo "::add-mask::$SITE_CREDENTIALS"
+              echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
+
+    # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
+    # Note: you will need to add a workflow file to the repo to use the secret
+    - name: 'Store the site credentials as GitHub secret'
+      uses: gliech/create-github-secret-action@v1
+      id: store-site-creds
+      with:
+        name: AZURE_CREDENTIALS
+        # value: ${{ steps.site-creds.outputs.SITE_CREDENTIALS }}
+        value: ${{ env.SITE_CREDENTIALS }}
+        pa_token: ${{secrets.API_GITHUB_PERSONAL_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
+
+    # Create the workflow file in the web app code repo
+    # The email address and name are required for the commit might be 41898282+github-actions[bot]@users.noreply.github.com
+    # See https://github.com/orgs/community/discussions/26560
+    - name: 'Create the workflow file'
+      uses: azure/CLI@v1 token
+      id: app-workflow
+      with:
+          inlineScript: |
+              templateName=nodejs-webapp-on-azure.yml
+              os=linux
+              mkdir -p .github/workflows
+              curl  https://raw.githubusercontent.com/Azure/actions-workflow-templates/master/AppService/$os/$templateName --output .github/workflows/ci.yaml
+              branch=master
+              publishProfile=AZURE_WEBAPP_PUBLISH_PROFILE
+              slotName=production
+              version=18.x
+              sed -i 's/${web-app-name}/'$webAppName'/g' .github/workflows/cd.yaml
+              sed -i 's/${branch}/'$branch'/g' .github/workflows/cd.yaml
+              sed -i 's/${AZURE_WEBAPP_PUBLISH_PROFILE}/'$publishProfile'/g' .github/workflows/cd.yaml
+              sed -i 's/${slot-name}/'$slotName'/g' .github/workflows/cd.yaml
+              sed -i 's/${node-version}/'$version'/g' .github/workflows/cd.yaml
+              git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+              git config --global user.email "username@users.noreply.github.com"
+              git commit -am "${{ env.CI_COMMIT_MESSAGE }}"
+              git push
