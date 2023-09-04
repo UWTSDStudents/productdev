@@ -1,6 +1,19 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
+#
+# NOTE: GitHub secrets must be manually added in GitHub.
+# SWA_GITHUB_PERSONAL_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub
+# Must have workflow scope to allow adding and updating of GitHub workflow files
+# This is created under GitHub Settings > Developer Settings > Personal access tokens > Tokens (Classic)
+# AZURE_CLIENT_ID: Application client ID
+# AZURE_TENANT_ID: Tenant ID
+# AZURE_SUBSCRIPTION_ID: Subscription ID
+# AZURE_DEPLOYMENT_RG: Resource group name for deployment objects (i.e. deployment history)
+# AZURE_RG: Resource group name where the Azure infrastrcuture will be deployed
+# These are created in the repo itself under Settings > Secrets and Variables > Actions > New repository secret
+#
+
 name: 'Build and deploy a webapp Bicep infrastructure to Azure'
 
 # Using workload identity federation to authenticate to Azure
@@ -15,6 +28,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Steps within a job are always executed sequentially!
   build-and-deploy:
     runs-on: ubuntu-latest
     
@@ -33,14 +47,19 @@ jobs:
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
     - name: 'Setup the Application Registration Object'
+      id: setup-app-reg
       run: |
-        chmod +x ./bicep-modules/cmd-scripts/*.azcli
-        returned=$(./bicep-modules/cmd-scripts/create-app-registration.azcli 'myAppObj')
+        chmod +x ./bicep_modules/cmd-scripts/*.azcli
+        dos2unix ./bicep_modules/cmd-scripts/create-app-registration.azcli
+        returned=$(./bicep_modules/cmd-scripts/create-app-registration.azcli 'myAppObj')
 
         # Split the result into an array
         IFS=',' read -ra results <<< "$returned"
 
         # Store the returned values in environment variables
+        # In most cases: Use an environment variable if you want the value to be available to all processes in following steps
+        # of the same job.
+        # Environment variables set via GITHUB_ENV don't carry over to other jobs.
         # echo "APP_CLIENT_ID=${results[0]}" >> "$GITHUB_ENV"
         appClientId=${results[0]}
         echo "PRINCIPAL_ID=${results[1]}" >> "$GITHUB_ENV"
@@ -54,18 +73,30 @@ jobs:
         fedCredsIssuer="https:\/\/token.actions.githubusercontent.com"
         fedCredsSubject="repo:${repo}:ref:refs\/heads\/${branch}"
         fedCredsAudiences="api:\/\/AzureADTokenExchange"
-        ./bicep-modules/cmd-scripts/set-app-fed-creds.azcli $appClientId $fedCredsName $fedCredsIssuer $fedCredsSubject $fedCredsAudiences
+        dos2unix ./bicep_modules/cmd-scripts/set-app-fed-creds.azcli
+        ./bicep_modules/cmd-scripts/set-app-fed-creds.azcli $appClientId $fedCredsName $fedCredsIssuer $fedCredsSubject $fedCredsAudiences
 
+    - name: 'Update the bicepparam file'
+      id: update-bicepparam-file
+      run: |
+        sed -i 's/<PRINCIPAL_ID>/'$PRINCIPAL_ID'/g' ./azure.bicepparam
+        sed -i 's/<SWA_PA_TOKEN>/'${{ secrets.SWA_GITHUB_PERSONAL_TOKEN }}'/g' ./azure.bicepparam
+
+    # The CLI equivalent to this is:
+    # az deployment sub create --name myAppBicepDeployment --location westeurope --subscription <SUBSCRIPTION_ID> \
+    # --template-file ./azure.bicep \
+    # --parameters ./azure.bicepparam  principalId=<PRINCIPAL_ID> rgName=<REGION_NAME> swaGithubToken=<SWA_GITHUB_PA>
     - name: 'Deploy the Azure infrastructure using Bicep'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
       uses: azure/arm-deploy@v1
+      id: deploy-bicep
       with:
         scope: subscription
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
         resourceGroupName: ${{ secrets.AZURE_DEPLOYMENT_RG }}
         template: ./azure.bicep
-        parameters: ./azure.bicepparam principalId=${{ env.PRINCIPAL_ID }} rgName=${{ secrets.AZURE_RG }}
+        parameters: ./azure.bicepparam
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
         # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
         # to stream warning or progress info.
