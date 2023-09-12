@@ -32,5 +32,25 @@ rm -rf .git/modules/webapp
 # Remove the entry in .gitmodules and remove the submodule directory located at path/to/submodule
 git rm -f webapp
 ```
-
-
+## Initial (one-off) setup required before deployment
+To deploy to azure, you must first execute the setup.azcli (bash) file passing it the subscription ID, resource group name where the resource will be deployed and a globally unique display application name.
+```
+./setup.azcli <SUBSCRIPTION ID> <RG NAME> <APP NAME>
+```
+This creates (or at least check for the existance of) the Application object (App Registration) and the associated service principal. It also executes the setup.bicep file to create the required resources, in this case just the resource group we require.
+Note: You cannot currently do an Application Registration in Bicep. Hence, this initial setup. Also, creating the resource group.
+## GitHub Workflows
+The GitHub workflow files (files are run in parallel), and are found in the directory .github/workflows.
+Note: there are similar workflow directories in the webapp and webapi directories but these are created automatically (we build the webapi workflow file ourselves in code-continuous-deployment.yaml).
+## GitHub Jobs
+GitHub jobs are run in parallel, we have just one job we have named "build-and-deploy".
+## GitHub Steps
+Each job contains a number of steps (actions) each of which is executed in sequence.
+# ci.yaml
+This workflow file executes if the main branch changes on the productdev repo
+It contains 1 job and a number of steps
+1. Checkout the head of the productdev repo (the repo containing the ci.yaml file)
+2. Log into Azure using the registed app and federated credentials (the most secure approach).
+3. Update the azure.bicepparam file so that it has the correct AZURE_SERVICE_PRINCIPAL_ID and SWA_GITHUB_PERSONAL_TOKEN values
+4. Deploy the azure.bicep file with the azure.bicepparam file
+5. Logout of Azure (not sure this is strictly needed)

@@ -1,0 +1,51 @@
+# Pass in the subscription ID as the first argument
+subscriptionId=$1
+
+# Pass in the resource group name where the resources will be deployed e.g ukwest
+rgName=$2
+
+# Application display name: the name the application will be registered with in Azure AD
+appName=$3
+
+# You only need to run this file once to create the resources that
+# cannot or you do not wish to create in a GitHub Actions workflow.
+
+echo "Creating app registration..."
+az login
+chmod +x ./bicep_modules/cmd-scripts/*.azcli
+dos2unix ./bicep_modules/cmd-scripts/create-app-registration.azcli
+returned=$(./bicep_modules/cmd-scripts/create-app-registration.azcli $appName)
+
+# Split the result into an array
+IFS=',' read -ra results <<< "$returned"
+
+# Store the returned values in environment variables
+# In most cases: Use an environment variable if you want the value to be available to all processes in following steps
+# of the same job.
+# Environment variables set via GITHUB_ENV don't carry over to other jobs.
+# echo "APP_CLIENT_ID=${results[0]}" >> "$GITHUB_ENV"
+appClientId=${results[0]}
+servicePrincipalId=${results[1]}
+
+# Specify the federated credentials for GitHub, so that Azure can authenticate to the GitHub.
+# Repo takes the form of the owner and repo name e.g. octocat/Hello-World
+echo "Setting up federated credentials for GitHub to log into Azure..."
+repo='UWTSDStudents/productdev'
+repo="${repo//\//\\/}"
+branch='main'
+fedCredsName="AppCreds"
+fedCredsIssuer="https:\/\/token.actions.githubusercontent.com"
+fedCredsSubject="repo:${repo}:ref:refs\/heads\/${branch}"
+fedCredsAudiences="api:\/\/AzureADTokenExchange"
+dos2unix ./bicep_modules/cmd-scripts/set-app-fed-creds.azcli
+./bicep_modules/cmd-scripts/set-app-fed-creds.azcli $appClientId $fedCredsName $fedCredsIssuer $fedCredsSubject $fedCredsAudiences
+
+echo "Setting up required initial infrastructure..."
+az deployment sub create --name myAppBicepDeployment --location westeurope --subscription $subscriptionId \
+ --template-file ./setup.bicep \
+ --parameters rgName=$rgName subscriptionId=$subscriptionId principalId=$servicePrincipalId
+
+echo 'Remember to add the following to the GitHub secrets to your repo:'
+echo "AZURE_CLIENT_ID=${results[0]}"
+echo "AZURE_SERVICE_PRINCIPAL_ID=${results[1]}"
+echo "AZURE_DEPLOYMENT_RG=${rgName}"

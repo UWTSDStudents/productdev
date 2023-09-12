@@ -1,12 +1,5 @@
-// The default subscription is where the bicep file
-// deployment will be created
-targetScope = 'subscription'
+targetScope = 'resourceGroup'
 
-@description('Resources are deployed to this resource group')
-param rgName string = 'rg-${deployment().name}'
-
-@description('Location for the deployed resources')
-param rgLocation string = 'ukwest'
 // Weirdly, we have to create resources in 'westeurope' but since they are
 // created in the resource group they end up in 'ukwest' anyway.
 param resourceLocation string = 'westeurope' 
@@ -36,17 +29,10 @@ param webappName string = 'webapp-${toLower(uniqueString(newGuid()))}' // Genera
 @description('App service plan name')
 param appServicePlanName string = 'appplan-${toLower(uniqueString(newGuid()))}' // Generate unique name
 
-// Create the resource group
-// Note: if the resource group already exists, this will do nothing
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: rgName
-  location: rgLocation
-}
 
 // Create the static web app
 module swa 'bicep_modules/static-web-app.bicep' = {
   name: '${swaName}-module'
-  scope: rg
   params: {
      name: swaName
      location: resourceLocation
@@ -59,7 +45,6 @@ module swa 'bicep_modules/static-web-app.bicep' = {
 // Create the node.js web app
 module app 'bicep_modules/web-app-github-linux.bicep' = {
   name: '${webappName}-module'
-  scope: rg
   params: {
      principalId: principalId
      name: webappName

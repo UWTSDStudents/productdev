@@ -15,13 +15,6 @@ using './azure.bicep'
 
 param principalId = '<PRINCIPAL_ID>' // Set in GitHub workflow file
 
-param rgLocation = 'ukwest'
-
-// Resource group where infrastructure will be deployed.
-// This can be the same as the deployment group where the deployment history is stored, or
-// a different resource group entirely.
-param rgName = 'myWebAppResourceGroup' 
-
 param swaGithubUrl = 'https://github.com/UWTSDStudents/productwebapp'
 param swaGithubToken = '<SWA_PA_TOKEN>'  // Set in GitHub workflow file using a GitHub secret
 param webappGithubUrl = 'https://github.com/UWTSDStudents/productwebapi'

@@ -9,8 +9,8 @@
 # AZURE_CLIENT_ID: Application client ID
 # AZURE_TENANT_ID: Tenant ID
 # AZURE_SUBSCRIPTION_ID: Subscription ID
+# AZURE_SERVICE_PRINCIPAL_ID: Service principal ID associated with the application client ID
 # AZURE_DEPLOYMENT_RG: Resource group name for deployment objects (i.e. deployment history)
-# AZURE_RG: Resource group name where the Azure infrastrcuture will be deployed
 # These are created in the repo itself under Settings > Secrets and Variables > Actions > New repository secret
 #
 
@@ -46,47 +46,29 @@ jobs:
       uses: azure/login@v1
       with:
       # Azure credentials are stored in GitHub secrets
-      # Create an rbac service principal like this:
-      # az ad sp create-for-rbac --name "CICD" --role contributor --scopes /subscriptions/<SUBSCRIPTION_ID> --sdk-auth
-      # This also returns the required credentials: client Id, client secret, tenant Id, subscription Id
+      # This assumes that an Application Registration has been created in Azure AD with an associated 
+      # service principal and that the service principal has been granted contributor access to the
+      # resource group where the Azure infrastructure will be deployed
         client-id: ${{secrets.AZURE_CLIENT_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
-    - name: 'Setup the Application Registration Object'
-      id: setup-app-reg
-      run: |
-        chmod +x ./bicep_modules/cmd-scripts/*.azcli
-        dos2unix ./bicep_modules/cmd-scripts/create-app-registration.azcli
-        returned=$(./bicep_modules/cmd-scripts/create-app-registration.azcli 'myAppObj')
-
-        # Split the result into an array
-        IFS=',' read -ra results <<< "$returned"
-
-        # Store the returned values in environment variables
-        # In most cases: Use an environment variable if you want the value to be available to all processes in following steps
-        # of the same job.
-        # Environment variables set via GITHUB_ENV don't carry over to other jobs.
-        # echo "APP_CLIENT_ID=${results[0]}" >> "$GITHUB_ENV"
-        appClientId=${results[0]}
-        echo "PRINCIPAL_ID=${results[1]}" >> "$GITHUB_ENV"
-
-        # Specify the federated credentials for GitHub, so that the web app can authenticate to GitHub
-        # github.repository provides the owner and repo name e.g. octocat/Hello-World
-        repo=${{ github.repository }}
-        repo="${repo//\//\\/}"
-        branch=${{ github.ref_name }}
-        fedCredsName="AppCreds"
-        fedCredsIssuer="https:\/\/token.actions.githubusercontent.com"
-        fedCredsSubject="repo:${repo}:ref:refs\/heads\/${branch}"
-        fedCredsAudiences="api:\/\/AzureADTokenExchange"
-        dos2unix ./bicep_modules/cmd-scripts/set-app-fed-creds.azcli
-        ./bicep_modules/cmd-scripts/set-app-fed-creds.azcli $appClientId $fedCredsName $fedCredsIssuer $fedCredsSubject $fedCredsAudiences
+    # Note: if you want a less "secure??" perhaps suitable for one off project, then you can
+    # use azure credentials (containing client Id, client secret, tenant Id, subscription Id, etc.)
+    # which you can obtain by creating an rbac service principal like this:
+    # az ad sp create-for-rbac --name "CICD" --role contributor --scopes /subscriptions/<SUBSCRIPTION_ID> --sdk-auth
+    # Copy the JSON returned by this command into the GitHub secret, which we typically name AZURE_CREDENTIALS.
+    # Essentially, this is a standard service principal that uses a client secret for authentication.
+    # The use the login step now looks like this: 
+    # - name: 'Az CLI login'
+    #   uses: azure/login@v1
+    #   with:
+    #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: 'Update the bicepparam file'
       id: update-bicepparam-file
       run: |
-        sed -i 's/<PRINCIPAL_ID>/'$PRINCIPAL_ID'/g' ./azure.bicepparam
+        sed -i 's/<PRINCIPAL_ID>/'${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}'/g' ./azure.bicepparam
         sed -i 's/<SWA_PA_TOKEN>/'${{ secrets.SWA_GITHUB_PERSONAL_TOKEN }}'/g' ./azure.bicepparam
 
     # The CLI equivalent to this is:
@@ -98,7 +80,7 @@ jobs:
       uses: azure/arm-deploy@v1
       id: deploy-bicep
       with:
-        scope: subscription
+        scope: resourcegroup
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
         resourceGroupName: ${{ secrets.AZURE_DEPLOYMENT_RG }}
