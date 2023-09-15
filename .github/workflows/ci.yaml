@@ -110,7 +110,7 @@ jobs:
     # Mask the credentials so they are not shown in workflow logs
     # These credentials are required to enable code deployment from GitHub
     - name: 'Create the site credentials'
-      uses: azure/CLI@v1 token
+      uses: azure/CLI@v1 
       id: site-creds
       if: ${{env.existing_site_creds == ''}}}
       with:
