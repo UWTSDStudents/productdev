@@ -3,7 +3,7 @@
 
 #
 # NOTE: GitHub secrets must be manually added in GitHub.
-# GITHUB_PERSONAL_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub
+# PERSONAL_ACCESS_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub
 # Must have workflow scope to allow adding and updating of GitHub workflow files and admin:org scope to allow a push operation
 # Note: technically an SWA only needs workflow scope, but I don't want to create a separate token for the web app.
 # This is created under GitHub Settings > Developer Settings > Personal access tokens > Tokens (Classic)
@@ -49,7 +49,7 @@ jobs:
         # A token is needed to checkout private submodules
         # Since we pretty much need the same access, we can use the same token 
         # since the token is associated with the GitHub account rather than a repo
-        token: ${{secrets.GITHUB_PERSONAL_TOKEN}}  
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}  
       
     - name: 'Az CLI login'
       uses: azure/login@v1
@@ -83,7 +83,7 @@ jobs:
       id: update-bicepparam-file
       run: |
         sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
-        sed -i 's/<SWA_PA_TOKEN>/'${{secrets.GITHUB_PERSONAL_TOKEN}}'/g' ./azure.bicepparam
+        sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
 
     # The CLI equivalent to this is:
     # az deployment sub create --name myAppBicepDeployment --location westeurope --subscription <SUBSCRIPTION_ID> \
@@ -129,7 +129,7 @@ jobs:
         name: AZURE_CREDENTIALS
         # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
         value: ${{env.SITE_CREDENTIALS}}
-        pa_token: ${{secrets.GITHUB_PERSONAL_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
+        pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
 
     # We have to enable code deployment having setup the Azure Site Credentials, to prevent an error
     # since Azure pulls the code from GitHub immediately.
