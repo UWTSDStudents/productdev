@@ -14,9 +14,10 @@
 # These are created in the repo itself under Settings > Secrets and Variables > Actions > New repository secret
 #
 
-# Manually add a GitHub environment variable to the repository
+# Manually add a GitHub repository variable 
 # AZURE_DEPLOYMENT_RG: Resource group name for deployment 
 # These are created in the repo itself under Settings > Secrets and Variables > Actions > Variables > New repository variable 
+# See configuration variables: https://docs.github.com/en/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows
 
 name: 'Build and deploy a webapp Bicep infrastructure to Azure'
 
@@ -97,7 +98,7 @@ jobs:
         scope: resourcegroup
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
-        resourceGroupName: ${{env.AZURE_DEPLOYMENT_RG}}
+        resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
         template: ./azure.bicep
         parameters: ./azure.bicepparam
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
@@ -115,7 +116,7 @@ jobs:
       if: ${{env.existing_site_creds == ''}}}
       with:
           inlineScript: |
-              SITE_CREDENTIALS=$(./web-app-code-deployment-setup.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{env.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS")
+              SITE_CREDENTIALS=$(./web-app-code-deployment-setup.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS")
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
 
@@ -141,7 +142,7 @@ jobs:
         scope: resourcegroup
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
-        resourceGroupName: ${{env.AZURE_DEPLOYMENT_RG}}
+        resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
         template: ./bicep_modules/web-app-github-code-deployment.bicep
         parameters: webAppName=${{steps.deploy_bicep.outputs.webAppName}} location=${{steps.deploy_bicep.outputs.resourceLocation}} githubUrl=${{steps.deploy_bicep.outputs.webAppGithubUrl}} branch=${{steps.deploy_bicep.outputs.webAppGBranch}} runtime=${{steps.deploy_bicep.outputs.webAppRuntime}}
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
