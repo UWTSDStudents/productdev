@@ -1,3 +1,4 @@
 mssql-data/
 secrets-data/
 log/
+.env
