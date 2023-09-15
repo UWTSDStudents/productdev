@@ -113,7 +113,7 @@ jobs:
       run: |
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<LOCATION>/'${{steps.deploy_bicep.outputs.resourceLocation}}'/g' ./web-app-github-code-deployment.bicepparam
-        sed -i 's/<GITHUB_URL>/'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'/g' ./web-app-github-code-deployment.bicepparam
+        sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<RUNTIME>/'${{steps.deploy_bicep.outputs.webAppRuntime}}'/g' ./web-app-github-code-deployment.bicepparam
 
