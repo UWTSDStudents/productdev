@@ -36,6 +36,7 @@ git rm -f webapp
 To deploy to azure, you must first execute the setup.azcli (bash) file passing it the subscription ID, resource group name where the resource will be deployed and a globally unique display application name.
 ```
 ./setup.azcli <SUBSCRIPTION ID> <RG NAME> <APP NAME>
+./setup.azcli bd3.....17 ukwest myAppObj
 ```
 This creates (or at least check for the existance of) the Application object (App Registration) and the associated service principal. It also executes the setup.bicep file to create the required resources, in this case just the resource group we require.
 Note: You cannot currently do an Application Registration in Bicep. Hence, this initial setup. Also, creating the resource group.
@@ -48,9 +49,12 @@ GitHub jobs are run in parallel, we have just one job we have named "build-and-d
 Each job contains a number of steps (actions) each of which is executed in sequence.
 # ci.yaml
 This workflow file executes if the main branch changes on the productdev repo
-It contains 1 job and a number of steps
-1. Checkout the head of the productdev repo (the repo containing the ci.yaml file)
-2. Log into Azure using the registed app and federated credentials (the most secure approach).
-3. Update the azure.bicepparam file so that it has the correct AZURE_SERVICE_PRINCIPAL_ID and SWA_GITHUB_PERSONAL_TOKEN values
-4. Deploy the azure.bicep file with the azure.bicepparam file
-5. Logout of Azure (not sure this is strictly needed)
+It contains 1 job that performs a number of steps
+1. Checks out the head of the productdev repo (the repo containing the ci.yaml file)
+2. Logs into Azure using the registed app and federated credentials (the most secure approach).
+3. Updates the azure.bicepparam file so that it has the correct AZURE_SERVICE_PRINCIPAL_ID and GITHUB_PERSONAL_TOKEN values
+4. Deploys the azure.bicep file using this the azure.bicepparam file
+5. Creates the site credentials
+5. Stores the site credentials in a GitHub secret
+6. Enables code deployment (which needs these site credentials)
+5. Logs out of Azure (not sure this is strictly needed)

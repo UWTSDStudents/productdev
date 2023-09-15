@@ -13,6 +13,7 @@ param principalId string // Service Principal ID
 
 @description('GitHub repository URL for the SWA')
 param swaGithubUrl string
+param swaBranch string = 'main'
 
 @description('GitHub repository personal access token')
 param swaGithubToken string
@@ -21,10 +22,12 @@ param swaGithubToken string
 param swaName string = 'swa-${toLower(uniqueString(newGuid()))}' // Generate unique name
 
 @description('GitHub repository URL for the Web App')
-param webappGithubUrl string
+param webAppGithubUrl string
+param webAppBranch string = 'main'
+param webAppRuntime string = 'node|18-lts'
 
 @description('Web app name')
-param webappName string = 'webapp-${toLower(uniqueString(newGuid()))}' // Generate unique name
+param webAppName string = 'webapp-${toLower(uniqueString(newGuid()))}' // Generate unique name
 
 @description('App service plan name')
 param appServicePlanName string = 'appplan-${toLower(uniqueString(newGuid()))}' // Generate unique name
@@ -37,6 +40,7 @@ module swa 'bicep_modules/static-web-app.bicep' = {
      name: swaName
      location: resourceLocation
      githubUrl: swaGithubUrl
+     branch: swaBranch
      githubToken: swaGithubToken
      appLocation: '/html'
   }
@@ -44,16 +48,53 @@ module swa 'bicep_modules/static-web-app.bicep' = {
 
 // Create the node.js web app
 module app 'bicep_modules/web-app-github-linux.bicep' = {
-  name: '${webappName}-module'
+  name: '${webAppName}-module'
   params: {
      principalId: principalId
-     name: webappName
+     name: webAppName
      location: resourceLocation
      newOrExistingAppServicePlan: 'new'
      appServicePlanName: appServicePlanName
-     runtime: 'node|18-lts'
-     githubUrl: webappGithubUrl
-     branch: 'main'
+     runtime: webAppRuntime
      appCommandLine: 'npm run start'
   }
 }
+
+// In this case, I thought it was more transparent to use create the credentials
+// outside of a Bicep file, such as in the GitHub workflow file, because the
+// resultant site credentials are sensitive and also need to be stored.
+// However, it is possible to create the credentials in Bicep using the following
+// resource runCodeDeploy 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+//   name: '${uniqueString(resourceGroup().id)}-runCodeDeploy-module'
+//   location: resourceLocation
+//   kind: 'AzureCLI'
+//   identity: {
+//     type: 'SystemAssigned'
+//   }
+//   properties: {
+//     azCliVersion: '2.26.2'
+//     scriptContent: '''
+//       siteCreds=$(./web-app-code-deployment-setup.azcli $principalId ${subscription().id} $rgName $webappName "AZURE_CREDENTIALS")
+//       echo '{ "site_creds": ${siteCreds} }' > $AZ_SCRIPTS_OUTPUT_PATH
+//     '''
+//     arguments: '$principalId ${subscription().id} $rgName $webappName "AZURE_CREDENTIALS"'
+//     supportingScriptUris: [
+//       'https://raw.githubusercontent.com/UWTSDSoACInfrastructure/BicepModules/main/cmd-scripts/web-app-code-deployment-setup.azcli', 'https://raw.githubusercontent.com/UWTSDSoACInfrastructure/BicepModules/main/cmd-scripts/web-app-site-creds.azcli'
+//     ]
+//     retentionInterval: 'P1D'
+//     cleanupPreference: 'Always'
+//     timeout: 'PT1H'
+//     forceUpdateTag: 'v1'
+//   }
+// }
+
+output resourceLocation string = resourceLocation
+output swaName string = swaName
+output webAppName string = webAppName
+
+// We need to return these values to allow the GitHub action to
+// to enable source code deployment and to apply the site credentials to the web app
+output webAppGithubUrl string = webAppGithubUrl
+output webAppBranch string = webAppBranch
+output webAppRuntime string = webAppRuntime
+//output creds object = runCodeDeploy.properties.outputs

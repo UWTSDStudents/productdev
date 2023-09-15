@@ -28,15 +28,15 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   location: rgLocation
 }
 
-// Assign Contributor role to the Application Registration service principal that
-// GitHub Actions can deploy to the resource group
+// Assign Owner role to the Application Registration service principal that
+// GitHub Actions can manage and deploy to the resource group
 module spRole 'bicep_modules/resource-group-role-assign.bicep' = {
   name: 'role-${rg.name}-module'
   scope: rg
   params: {
     subscriptionId: subscriptionId
     principalId: principalId
-    roleType: 'Contributor'
+    roleType: 'Owner'
   }
 }
 

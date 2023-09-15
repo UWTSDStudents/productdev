@@ -16,15 +16,18 @@ using './azure.bicep'
 param principalId = '<PRINCIPAL_ID>' // Set in GitHub workflow file
 
 param swaGithubUrl = 'https://github.com/UWTSDStudents/productwebapp'
+param swaBranch = 'main'
 param swaGithubToken = '<SWA_PA_TOKEN>'  // Set in GitHub workflow file using a GitHub secret
-param webappGithubUrl = 'https://github.com/UWTSDStudents/productwebapi'
+param webAppGithubUrl = 'https://github.com/UWTSDStudents/productwebapi'
+param webAppBranch = 'main'
+param webAppRuntime = 'node|18-lts'
 param swaName = 'mySwa'
 
 // The web app name needs to produce a unique FQDN
 // your-app-name.azurewebsites.net
 // In Bash, something like this webAppName="mywebapp$RANDOM" 
 // IMPORTANT: Remember to change the name in the webpack.prod.js file.
-param webappName = 'myWebApp16964'
+param webAppName = 'myWebApp16964'
 
 param appServicePlanName  = 'myAppServicePlan'
 

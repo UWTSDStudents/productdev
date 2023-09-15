@@ -3,8 +3,9 @@
 
 #
 # NOTE: GitHub secrets must be manually added in GitHub.
-# SWA_GITHUB_PERSONAL_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub
-# Must have workflow scope to allow adding and updating of GitHub workflow files
+# GITHUB_PERSONAL_TOKEN: Personal access token for the GitHub account that will be used to authenticate to GitHub
+# Must have workflow scope to allow adding and updating of GitHub workflow files and admin:org scope to allow a push operation
+# Note: technically an SWA only needs workflow scope, but I don't want to create a separate token for the web app.
 # This is created under GitHub Settings > Developer Settings > Personal access tokens > Tokens (Classic)
 # AZURE_CLIENT_ID: Application client ID
 # AZURE_TENANT_ID: Tenant ID
@@ -13,6 +14,9 @@
 # AZURE_DEPLOYMENT_RG: Resource group name for deployment objects (i.e. deployment history)
 # These are created in the repo itself under Settings > Secrets and Variables > Actions > New repository secret
 #
+
+# Manually add a GitHub environment variable to the repository
+# SETAPP_CODE_DEPLOYMENT_SETUP: set to "true" to create and store the site credentials as a GitHub secret
 
 name: 'Build and deploy a webapp Bicep infrastructure to Azure'
 
@@ -31,6 +35,11 @@ jobs:
   # Steps within a job are always executed sequentially!
   build-and-deploy:
     runs-on: ubuntu-latest
+    # We cannot direclty use a secret in a conditional expression, so we need to use an environment variable.
+    # If a secret has not been set, the return value of an expression referencing the secret will be an empty string.
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-using-secrets
+    env:
+      existing_site_creds: ${{secrets.AZURE_CREDENTIALS}}  
     
     steps:
     - name: 'Checkout GitHub Action'
@@ -38,9 +47,9 @@ jobs:
       with:
         submodules: true
         # A token is needed to checkout private submodules
-        # Since we pretty much need the same access, we can use the same token as for the SWA
+        # Since we pretty much need the same access, we can use the same token 
         # since the token is associated with the GitHub account rather than a repo
-        token: ${{ secrets.SWA_GITHUB_PERSONAL_TOKEN }}  
+        token: ${{secrets.GITHUB_PERSONAL_TOKEN}}  
       
     - name: 'Az CLI login'
       uses: azure/login@v1
@@ -65,11 +74,16 @@ jobs:
     #   with:
     #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    # Some information required in the bicepparam file is not know unitl the resources
+    # are created, so we need to update the bicepparam file with this information
+    # Note: we are doing this because currently it is not possible to override values in
+    # the bicepparam file using bicep. Although, you can do it if you use JSON :-( by
+    # just passing the parameters alongside the json params file.
     - name: 'Update the bicepparam file'
       id: update-bicepparam-file
       run: |
-        sed -i 's/<PRINCIPAL_ID>/'${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}'/g' ./azure.bicepparam
-        sed -i 's/<SWA_PA_TOKEN>/'${{ secrets.SWA_GITHUB_PERSONAL_TOKEN }}'/g' ./azure.bicepparam
+        sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
+        sed -i 's/<SWA_PA_TOKEN>/'${{secrets.GITHUB_PERSONAL_TOKEN}}'/g' ./azure.bicepparam
 
     # The CLI equivalent to this is:
     # az deployment sub create --name myAppBicepDeployment --location westeurope --subscription <SUBSCRIPTION_ID> \
@@ -78,19 +92,63 @@ jobs:
     - name: 'Deploy the Azure infrastructure using Bicep'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
       uses: azure/arm-deploy@v1
-      id: deploy-bicep
+      id: deploy_bicep
       with:
         scope: resourcegroup
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
-        resourceGroupName: ${{ secrets.AZURE_DEPLOYMENT_RG }}
+        resourceGroupName: ${{secrets.AZURE_DEPLOYMENT_RG}}
         template: ./azure.bicep
         parameters: ./azure.bicepparam
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
         # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
         # to stream warning or progress info.
-        failedOnStdErr: false
-        deploymentName: myAppBicepDeployment
+        failOnStdErr: false
+        deploymentName: infrastructureDeployment
+
+    # Create a service principal for the web app with the site credenitals
+    # Mask the credentials so they are not shown in workflow logs
+    # These credentials are required to enable code deployment from GitHub
+    - name: 'Create the site credentials'
+      uses: azure/CLI@v1 token
+      id: site-creds
+      if: ${{env.existing_site_creds == ''}}}
+      with:
+          inlineScript: |
+              SITE_CREDENTIALS=$(./web-app-code-deployment-setup.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{secrets.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS")
+              echo "::add-mask::$SITE_CREDENTIALS"
+              echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
+
+    # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
+    # Note: you will need to add a workflow file to the repo to use the secret
+    - name: 'Store the site credentials as GitHub secret'
+      uses: gliech/create-github-secret-action@v1
+      id: store-site-creds
+      if: ${{env.existing_site_creds == ''}}}
+      with:
+        name: AZURE_CREDENTIALS
+        # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
+        value: ${{env.SITE_CREDENTIALS}}
+        pa_token: ${{secrets.GITHUB_PERSONAL_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
+
+    # We have to enable code deployment having setup the Azure Site Credentials, to prevent an error
+    # since Azure pulls the code from GitHub immediately.
+    - name: 'Enable code deployment from GitHub'
+      # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
+      uses: azure/arm-deploy@v1
+      id: source-control-bicep
+      with:
+        scope: resourcegroup
+        subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        # This resource group contains the deloyment objects (i.e. deployment history)
+        resourceGroupName: ${{secrets.AZURE_DEPLOYMENT_RG}}
+        template: ./bicep_modules/web-app-github-code-deployment.bicep
+        parameters: webAppName=${{steps.deploy_bicep.outputs.webAppName}} location=${{steps.deploy_bicep.outputs.resourceLocation}} githubUrl=${{steps.deploy_bicep.outputs.webAppGithubUrl}} branch=${{steps.deploy_bicep.outputs.webAppGBranch}} runtime=${{steps.deploy_bicep.outputs.webAppRuntime}}
+        # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
+        # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
+        # to stream warning or progress info.
+        failOnStdErr: false
+        deploymentName: enableAppCodeDeployment
 
     - name: Azure logout
       run: |
