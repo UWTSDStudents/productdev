@@ -31,6 +31,13 @@ rm -rf .git/modules/webapp
 
 # Remove the entry in .gitmodules and remove the submodule directory located at path/to/submodule
 git rm -f webapp
+
+NOTE:
+Sometimes the HEAD and the origin/main get out of sync on a submodule and the files do not get
+correctly pushed to the submodule repo.
+To fix this, push like this and check the log:
+git push origin main
+git log
 ```
 ## Initial (one-off) setup required before deployment
 To deploy to azure, you must first execute the setup.azcli (bash) file passing it the subscription ID, resource group name where the resource will be deployed and a globally unique display application name.
