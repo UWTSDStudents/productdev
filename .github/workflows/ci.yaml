@@ -145,7 +145,7 @@ jobs:
         # This resource group contains the deloyment objects (i.e. deployment history)
         resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
         template: ./bicep_modules/web-app-github-code-deployment.bicep
-        parameters: webAppName=${{steps.deploy_bicep.outputs.webAppName}} location=${{steps.deploy_bicep.outputs.resourceLocation}} githubUrl=${{steps.deploy_bicep.outputs.webAppGithubUrl}} branch=${{steps.deploy_bicep.outputs.webAppBranch}} runtime=${{steps.deploy_bicep.outputs.webAppRuntime}}
+        parameters: 'webAppName=${{steps.deploy_bicep.outputs.webAppName}} location=${{steps.deploy_bicep.outputs.resourceLocation}} githubUrl=${{steps.deploy_bicep.outputs.webAppGithubUrl}} branch=${{steps.deploy_bicep.outputs.webAppBranch}} runtime=${{steps.deploy_bicep.outputs.webAppRuntime}}
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
         # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
         # to stream warning or progress info.
