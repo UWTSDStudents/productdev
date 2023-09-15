@@ -36,7 +36,7 @@ git rm -f webapp
 To deploy to azure, you must first execute the setup.azcli (bash) file passing it the subscription ID, resource group name where the resource will be deployed and a globally unique display application name.
 ```
 ./setup.azcli <SUBSCRIPTION ID> <RG NAME> <APP NAME>
-./setup.azcli bd3.....17 ukwest myAppObj
+./setup.azcli bd3.....17 mikes-deployment-rg myAppObj
 ```
 This creates (or at least check for the existance of) the Application object (App Registration) and the associated service principal. It also executes the setup.bicep file to create the required resources, in this case just the resource group we require.
 Note: You cannot currently do an Application Registration in Bicep. Hence, this initial setup. Also, creating the resource group.
