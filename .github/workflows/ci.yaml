@@ -41,7 +41,7 @@ on:
 
 # jobs are executed in parallel by default but using "needs" can make them work sequentially
 jobs:
-  bicep-validation-job:
+  bicepparam-update-job:
     runs-on: ubuntu-latest
     steps:
     - name: 'Checkout GitHub Action'
@@ -55,6 +55,26 @@ jobs:
       run: |
         sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
         sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
+    - run: cp ./bicep_modules/.github/workflows/bicep_validation.yaml ./.github/workflows/bicep_validation.yaml
+    - name: 'Cache the bicepparam file'
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          ./azure.bicep
+          ./azure.bicepparam
+          ./github/workflows/bicep_validation.yaml
+        key: ${{ runner.os }}-bicepparam
+
+  # Reusable workflows must be used as jobs, they cannot be added as steps to another job!!
+  bicep-validation-job:
+    needs: bicepparam-update-job
+    - uses: actions/cache/restore@v3
+      with:
+        path: |
+          ./azure.bicep
+          ./azure.bicepparam
+          ./github/workflows/bicep_validation.yaml
+        key: ${{ runner.os }}-bicep
       # Reusable workflow to lint and validate Bicep file
     - uses: ./.github/workflows/bicep_validation.yaml@main
       with:
