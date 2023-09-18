@@ -41,31 +41,22 @@ on:
 
 # jobs are executed in parallel by default but using "needs" can make them work sequentially
 jobs:
-  bicep-params-job:
-    # Some information required in the bicepparam file is not know unitl the resources
-    # are created, so we need to update the bicepparam file with this information
-    # Note: we are doing this because currently it is not possible to override values in
-    # the bicepparam file using bicep. Although, you can do it if you use JSON :-( by
-    # just passing the parameters alongside the json params file.   
+  bicep-validation-job:
     runs-on: ubuntu-latest
-    steps:  
+    needs: bicep-params-job
+    steps:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v3
       with:
         submodules: true
         token: ${{secrets.PERSONAL_ACCESS_TOKEN}}  
+      # See notes in the later job about updating bicepparam file
     - name: 'Update the bicepparam file'
       id: update-bicepparam-file
       run: |
         sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
         sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
-
-  bicep-validation-job:
-    runs-on: ubuntu-latest
-    needs: bicep-params-job
-    steps:
-    - run: cp ./bicep_modules/.github/workflows/bicep_validation.yaml ./.github/workflows/bicep_validation.yaml
-  # Reusable workflow to lint and validate Bicep file
+      # Reusable workflow to lint and validate Bicep file
     - uses: ./.github/workflows/bicep_validation.yaml@main
       with:
         bicep_file: ./azure.bicep
@@ -85,6 +76,9 @@ jobs:
       existing_site_creds: ${{secrets.AZURE_CREDENTIALS}}  
     
     steps:
+      # Checkout the web app code repo
+      # Note: folder and files you checkout, do not persist across jobs.
+      # Use a cache, to persist folders and files across jobs.
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v3
       with:
@@ -92,7 +86,7 @@ jobs:
         # A token is needed to checkout private submodules
         # Since we pretty much need the same access, we can use the same token 
         # since the token is associated with the GitHub account rather than a repo
-        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}  
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}      
       
     - name: 'Az CLI login'
       uses: azure/login@v1
@@ -116,6 +110,17 @@ jobs:
     #   uses: azure/login@v1
     #   with:
     #     creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Some information required in the bicepparam file is not know unitl the resources
+    # are created, so we need to update the bicepparam file with this information
+    # Note: we are doing this because currently it is not possible to override values in
+    # the bicepparam file using bicep. Although, you can do it if you use JSON :-( by
+    # just passing the parameters alongside the json params file.   
+    - name: 'Update the bicepparam file'
+      id: update-bicepparam-file
+      run: |
+        sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
+        sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
 
     # The CLI equivalent to this is:
     # az deployment sub create --name myAppBicepDeployment --location westeurope --subscription <SUBSCRIPTION_ID> \
