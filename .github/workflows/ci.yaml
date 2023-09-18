@@ -58,7 +58,7 @@ jobs:
   bicep-validation-job:
     needs: bicep-params-job
   # Reusable workflow to lint and validate Bicep file
-    uses: UWTSDSoACInfrastructure/BicepModules/.github/workflows/bicep_validation.yaml@main
+    uses: bicep_modules/.github/workflows/bicep_validation.yaml@main
     with:
       bicep_file: ./azure.bicep
       bicep_params_file: ./azure.bicepparam
