@@ -42,18 +42,23 @@ on:
 # jobs are executed in parallel by default but using "needs" can make them work sequentially
 jobs:
   bicep-params-job:
+    # Some information required in the bicepparam file is not know unitl the resources
+    # are created, so we need to update the bicepparam file with this information
+    # Note: we are doing this because currently it is not possible to override values in
+    # the bicepparam file using bicep. Although, you can do it if you use JSON :-( by
+    # just passing the parameters alongside the json params file.   
     runs-on: ubuntu-latest
-    steps:
-      # Some information required in the bicepparam file is not know unitl the resources
-      # are created, so we need to update the bicepparam file with this information
-      # Note: we are doing this because currently it is not possible to override values in
-      # the bicepparam file using bicep. Although, you can do it if you use JSON :-( by
-      # just passing the parameters alongside the json params file.
-      - name: 'Update the bicepparam file'
-        id: update-bicepparam-file
-        run: |
-          sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
-          sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
+    steps:  
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}  
+    - name: 'Update the bicepparam file'
+      id: update-bicepparam-file
+      run: |
+        sed -i 's/<PRINCIPAL_ID>/'${{secrets.AZURE_SERVICE_PRINCIPAL_ID}}'/g' ./azure.bicepparam
+        sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
 
   bicep-validation-job:
     runs-on: ubuntu-latest
