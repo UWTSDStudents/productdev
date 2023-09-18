@@ -56,12 +56,15 @@ jobs:
           sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
 
   bicep-validation-job:
+    runs-on: ubuntu-latest
     needs: bicep-params-job
+    steps:
+    - run: cp ./bicep_modules/.github/workflows/bicep_validation.yaml ./.github/workflows/bicep_validation.yaml
   # Reusable workflow to lint and validate Bicep file
-    uses: bicep_modules/.github/workflows/bicep_validation.yaml@main
-    with:
-      bicep_file: ./azure.bicep
-      bicep_params_file: ./azure.bicepparam
+    - uses: ./.github/workflows/bicep_validation.yaml@main
+      with:
+        bicep_file: ./azure.bicep
+        bicep_params_file: ./azure.bicepparam
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
