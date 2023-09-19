@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v3
       with:
-        name: {{inputs.files_artifact}}
+        name: ${{inputs.files_artifact}}
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
@@ -40,7 +40,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v3
       with:
-        name: {{inputs.files_artifact}}
+        name: ${{inputs.files_artifact}}
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
@@ -66,7 +66,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v3
       with:
-        name: {{inputs.files_artifact}}
+        name: ${{inputs.files_artifact}}
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
@@ -80,7 +80,7 @@ jobs:
         scope: resourcegroup
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
-        template: {{inputs.bicep_file}}
-        parameters: {{inputs.bicep_params_file}}
+        template: ${{inputs.bicep_file}}
+        parameters: ${{inputs.bicep_params_file}}
         deploymentName: previewInfrastructureDeployment
         additionalArguments: '--what-if'
