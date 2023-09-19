@@ -17,6 +17,8 @@ on:
 
 jobs:
   azure-login-job:
+    runs-on: ubuntu-latest
+    steps:
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
