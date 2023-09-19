@@ -71,10 +71,10 @@ jobs:
     needs: bicepparam-update-job
       # Reusable workflow to lint and validate Bicep file
     uses: ./.github/workflows/bicep_validation.yaml@main
-      with:
-        files_artifact: bicepparam-data
-        bicep_file: ./azure.bicep
-        bicep_params_file: ./azure.bicepparam
+    with:
+      files_artifact: bicepparam-data
+      bicep_file: ./azure.bicep
+      bicep_params_file: ./azure.bicepparam
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
