@@ -88,7 +88,7 @@ jobs:
     needs: bicep-validation-job
     environment: confirm-deployment
     steps:
-      run: echo "Confirmed deployment"
+    - run: echo "Confirmed deployment"
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
