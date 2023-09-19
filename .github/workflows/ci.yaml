@@ -63,6 +63,7 @@ jobs:
           ./azure.bicep
           ./azure.bicepparam
           ./github/workflows/bicep_validation.yaml
+          ./bicep_modules
         retention-days: 1
 
   # Reusable workflows must be used as jobs, they cannot be added as steps to another job!!
