@@ -70,7 +70,7 @@ jobs:
   bicep-validation-job:
     needs: bicepparam-update-job
       # Reusable workflow to lint and validate Bicep file
-    uses: ./.github/workflows/bicep_validation.yaml@main
+    uses: ./.github/workflows/bicep_validation.yaml
     with:
       files_artifact: bicepparam-data
       bicep_file: ./azure.bicep
