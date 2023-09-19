@@ -79,14 +79,20 @@ jobs:
     # enterprise can use the inherit keyword to implicitly pass the secrets. 
     # You can then reference them even if they are not explicitly defined here.
     secrets: inherit
+
+  # Warning: using environment changes the federated credentials required to
+  # something like: repo:UWTSDStudents/productdev:environment:confirm-deployment
+  # for the job. Hence, I've added a specif job for user confirmation.
+  user-confirm-job:
+    needs: bicep-validation-job
+    environment: confirm-deployment
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
   # specify who can confirm that this job should go ahead.
   build-and-deploy-job:
     runs-on: ubuntu-latest
-    environment: confirm-deployment
-    needs: bicep-validation-job
+    needs: user-confirm-job
     # We cannot direclty use a secret in a conditional expression, so we need to use an environment variable.
     # If a secret has not been set, the return value of an expression referencing the secret will be an empty string.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-using-secrets
@@ -116,7 +122,6 @@ jobs:
         client-id: ${{secrets.AZURE_CLIENT_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-        environment: 'AzureCloud'
 
     # Note: if you want a less "secure??" perhaps suitable for one off project, then you can
     # use azure credentials (containing client Id, client secret, tenant Id, subscription Id, etc.)
