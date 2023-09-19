@@ -116,6 +116,7 @@ jobs:
         client-id: ${{secrets.AZURE_CLIENT_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        environment: confirm-deployment
 
     # Note: if you want a less "secure??" perhaps suitable for one off project, then you can
     # use azure credentials (containing client Id, client secret, tenant Id, subscription Id, etc.)
