@@ -84,8 +84,11 @@ jobs:
   # something like: repo:UWTSDStudents/productdev:environment:confirm-deployment
   # for the job. Hence, I've added a specif job for user confirmation.
   user-confirm-job:
+    runs-on: ubuntu-latest
     needs: bicep-validation-job
     environment: confirm-deployment
+    steps:
+      run: echo "Confirmed deployment"
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
