@@ -33,7 +33,7 @@ jobs:
       id: bicep-linter
       with:
           inlineScript: |
-              az bicep build --file {{inputs.bicep_file}} 
+              az bicep build --file ${{inputs.bicep_file}} 
 
   validate-bicep-job:
     runs-on: ubuntu-latest
