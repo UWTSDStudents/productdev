@@ -57,27 +57,22 @@ jobs:
         sed -i 's/<SWA_PA_TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./azure.bicepparam
     - run: cp ./bicep_modules/.github/workflows/bicep_validation.yaml ./.github/workflows/bicep_validation.yaml
     - name: 'Cache the bicepparam file'
-      uses: actions/cache/save@v3
+      uses: actions/upload-artifact@v3
       with:
+        name: bicepparam-data
         path: |
           ./azure.bicep
           ./azure.bicepparam
           ./github/workflows/bicep_validation.yaml
-        key: ${{ runner.os }}-bicepparam
+        retention-days: 1
 
   # Reusable workflows must be used as jobs, they cannot be added as steps to another job!!
   bicep-validation-job:
     needs: bicepparam-update-job
-    - uses: actions/cache/restore@v3
-      with:
-        path: |
-          ./azure.bicep
-          ./azure.bicepparam
-          ./github/workflows/bicep_validation.yaml
-        key: ${{ runner.os }}-bicep
       # Reusable workflow to lint and validate Bicep file
-    - uses: ./.github/workflows/bicep_validation.yaml@main
+    uses: ./.github/workflows/bicep_validation.yaml@main
       with:
+        files_artifact: bicepparam-data
         bicep_file: ./azure.bicep
         bicep_params_file: ./azure.bicepparam
      
@@ -162,7 +157,7 @@ jobs:
         failOnStdErr: false
         deploymentName: infrastructureDeployment
 
-    # Create bicepparam file 
+    # Create bicepparam file for the web app code deployment
     - name: 'Params to enable web app code deployment'
       id: code-deployment-params
       run: |
