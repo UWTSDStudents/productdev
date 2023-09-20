@@ -49,3 +49,8 @@ echo 'Remember to add the following to the GitHub secrets to your repo:'
 echo "AZURE_CLIENT_ID=${results[0]}"
 echo "AZURE_SERVICE_PRINCIPAL_ID=${results[1]}"
 echo "AZURE_DEPLOYMENT_RG=${rgName}"
+
+# GitHub CLI to set secrets
+# gh secret set AZURE_SUBSCRIPTION_ID --app actions --body 00000000-0000-0000-0000-000000000000
+# gh secret set AZURE_TENANT_ID --app actions --body 00000000-0000-0000-0000-000000000000
+# gh secret set AZURE_CLIENT_ID --app actions --body 00000000-0000-0000-0000-000000000000
