@@ -39,4 +39,3 @@ module spRole 'bicep_modules/resource-group-role-assign.bicep' = {
     roleType: 'Owner'
   }
 }
-
