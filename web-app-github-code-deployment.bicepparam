@@ -1,6 +1,10 @@
-using 'bicep_modules/web-app-github-manual-code-deployment.bicep'
+using 'bicep_modules/web-app-github-code-deployment.bicep'
 
+param deploymentMode = 'manual'
+param subscriptionId = '<SUBSCRIPTION_ID>'
+param resourceGroupName = '<RESOURCE_GROUP_NAME>'
 param webAppName = '<WEB_APP_NAME>'
 param githubUrl = '<GITHUB_URL>'
 param branch = '<BRANCH>'
+param githubToken = '<TOKEN>'
 // param runtime = '<RUNTIME>'

@@ -174,9 +174,12 @@ jobs:
     - name: 'Params to enable web app code deployment'
       id: code-deployment-params
       run: |
+        sed -i 's/<SUBSCRIPTION_ID>/'${{secrets.AZURE_SUBSCRIPTION_ID}}'/g' ./web-app-github-code-deployment.bicepparam
+        sed -i 's/<RESOURCE_GROUP_NAME>/'${{vars.AZURE_DEPLOYMENT_RG}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
+        sed -i 's/<BRANCH>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./web-app-github-code-deployment.bicepparam
 
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam
 
@@ -217,7 +220,7 @@ jobs:
         subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         # This resource group contains the deloyment objects (i.e. deployment history)
         resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
-        template: ./bicep_modules/web-app-github-manual-code-deployment.bicep
+        template: ./bicep_modules/web-app-github-code-deployment.bicep
         parameters: ./web-app-github-code-deployment.bicepparam
         # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
         # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
