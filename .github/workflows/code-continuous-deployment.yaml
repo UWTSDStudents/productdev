@@ -62,7 +62,7 @@
 #     # Create a service principal for the web app with the site credenitals
 #     # Mask the credentials so they are not shown in workflow logs
 #     - name: 'Create the site credentials'
-#       uses: azure/CLI@v1 token
+#       uses: azure/CLI@v1 
 #       id: site-creds
 #       with:
 #           inlineScript: |
@@ -85,7 +85,7 @@
 #     # The email address and name are required for the commit might be 41898282+github-actions[bot]@users.noreply.github.com
 #     # See https://github.com/orgs/community/discussions/26560
 #     - name: 'Create the workflow file'
-#       uses: azure/CLI@v1 token
+#       uses: azure/CLI@v1 
 #       id: app-workflow
 #       with:
 #           inlineScript: |

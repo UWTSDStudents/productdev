@@ -198,24 +198,6 @@ jobs:
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
 
-              echo "Cd webapp"
-              cd webapp
-              mkdir -p .github/workflows
-              echo "Create workflow file"
-              ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
-
-              echo "Push workflow file to webapp repo"
-              # Push the updated workflow file to the webapp repo
-              # Safe directory: there is a security risk if the .git is not owned by the current user.
-              # The workaround provided by git is to add the current folder to the safe.directory global
-              # variable, so that git will regard the folder as safe.
-              #git config --global --add safe.directory /home/runner/work/productdev/productdev/webapp
-              git config --global user.name $commitAuthor
-              git config --global user.email "username@users.noreply.github.com"
-              git add .github/workflows/cd.yaml
-              git commit -m $commitMessage
-              git push
-
     # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
     # Note: you will need to add a workflow file to the repo to use the secret
     - if: ${{env.existing_site_creds == ''}}
@@ -227,6 +209,32 @@ jobs:
         # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
+
+    - name: 'Update the submodules in preparation to push new code'
+      run: |
+        git submodule update --init --recursive
+        git submodule update --recursive --remote  
+
+    - name: 'Create workflow file for web app code deployment'
+      run: |
+        cd webapp
+        mkdir -p .github/workflows
+        ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
+
+    - name: 'Push workflow file to webapp repo'
+      run: |
+        commitMessage="Continuous Integration Build Artifacts"
+        commitAuthor="Continuous Integration"
+        # Push the updated workflow file to the webapp repo
+        # Safe directory: there is a security risk if the .git is not owned by the current user.
+        # The workaround provided by git is to add the current folder to the safe.directory global
+        # variable, so that git will regard the folder as safe.
+        #git config --global --add safe.directory /home/runner/work/productdev/productdev/webapp
+        git config --global user.name $commitAuthor
+        git config --global user.email "username@users.noreply.github.com"
+        git add .github/workflows/cd.yaml
+        git commit -m $commitMessage
+        git push
 
     # This step is not strictly necessary since we manually pushed a wrokf
     - name: 'Enable code deployment from GitHub'
