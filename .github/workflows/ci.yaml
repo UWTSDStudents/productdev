@@ -218,10 +218,10 @@ jobs:
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
 
-    - name: 'Update the submodules in preparation to push new code'
-      run: |
-        git submodule update --init --recursive
-        git submodule update --recursive --remote  
+    # - name: 'Update the submodules in preparation to push new code'
+    #   run: |
+    #     git submodule update --init --recursive
+    #     git submodule update --recursive --remote  
 
     - name: 'Create workflow file for web api code deployment'
       run: |
@@ -235,7 +235,9 @@ jobs:
         cd webapi
         pwd
         ls .github/workflows
-        ls .git
+        rm -rf .git
+        git init
+        git add remote origin https://github.com/UWTSDStudents/productwebapi.git
         echo "Branch: ${{github.ref}}"
         # Push the updated workflow file to the webapp repo
         # Safe directory: there is a security risk if the .git is not owned by the current user.
@@ -253,11 +255,7 @@ jobs:
         git add .github/workflows/cd.yaml
         echo "Commit the workflow file"
         git commit -m $commitMessage
-    - name: Push workflow file to webapp repo
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
-        branch: ${{github.ref}}
+        git push origin main
 
     # This step is not strictly necessary since we manually pushed a wrokf
     - name: 'Enable code deployment from GitHub'
