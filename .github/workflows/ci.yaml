@@ -110,7 +110,7 @@ jobs:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v3
       with:
-        submodules: true
+        submodules: recursive
         # A token is needed to checkout private submodules
         # Since we pretty much need the same access, we can use the same token 
         # since the token is associated with the GitHub account rather than a repo
@@ -120,9 +120,10 @@ jobs:
       run: |
         # Install dos2unix to convert line endings
         sudo apt-get install dos2unix
+        # Clean scripts and make them executable.
         chmod +x ./bicep_modules/cmd-scripts/*.azcli
         dos2unix ./bicep_modules/cmd-scripts/*.azcli
-      
+
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
@@ -222,27 +223,33 @@ jobs:
         git submodule update --init --recursive
         git submodule update --recursive --remote  
 
-    - name: 'Create workflow file for web app code deployment'
+    - name: 'Create workflow file for web api code deployment'
       run: |
-        cd webapp
+        cd webapi
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
 
-    - name: 'Commit workflow file to webapp repo'
+    - name: 'Commit workflow file to webapi repo'
+      if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       run: |
-        cd webapp
-        commitMessage="Continuous Integration Build Artifacts"
-        commitAuthor="Continuous Integration"
+        cd webapi
         pwd
         ls .github/workflows
+        ls .git
         echo "Branch: ${{github.ref}}"
         # Push the updated workflow file to the webapp repo
         # Safe directory: there is a security risk if the .git is not owned by the current user.
         # The workaround provided by git is to add the current folder to the safe.directory global
         # variable, so that git will regard the folder as safe.
+        # Set the git commit message and author
+        commitMessage="Continuous Integration Build Artifacts"
+        commitAuthor="Continuous Integration"
         #git config --global --add safe.directory /home/runner/work/productdev/productdev/webapp
         git config --global user.name $commitAuthor
         git config --global user.email "username@users.noreply.github.com"
+        echo "Pull code"
+        git pull
+        echo "Add and commit the workflow file"
         git add .github/workflows/cd.yaml
         git commit -m $commitMessage
     - name: Push workflow file to webapp repo
