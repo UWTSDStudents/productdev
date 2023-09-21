@@ -238,6 +238,7 @@ jobs:
         rm -rf .git
         git init
         git add remote origin https://github.com/UWTSDStudents/productwebapi.git
+        git checkout -b main
         echo "Branch: ${{github.ref}}"
         # Push the updated workflow file to the webapp repo
         # Safe directory: there is a security risk if the .git is not owned by the current user.
