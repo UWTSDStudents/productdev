@@ -114,7 +114,14 @@ jobs:
         # A token is needed to checkout private submodules
         # Since we pretty much need the same access, we can use the same token 
         # since the token is associated with the GitHub account rather than a repo
-        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}      
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}    
+        
+    - name: 'Bash shell setup and code cleanup'
+      run: |
+        # Install dos2unix to convert line endings
+        sudo apt-get install dos2unix
+        chmod +x ./bicep_modules/cmd-scripts/*.azcli
+        dos2unix ./bicep_modules/cmd-scripts/*.azcli
       
     - name: 'Az CLI login'
       uses: azure/login@v1
@@ -217,8 +224,6 @@ jobs:
 
     - name: 'Create workflow file for web app code deployment'
       run: |
-        chmod +x ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli
-        dos2unix ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli
         cd webapp
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
