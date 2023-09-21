@@ -192,6 +192,7 @@ jobs:
           inlineScript: |
               chmod +x ./bicep_modules/cmd-scripts/web-app-code-deployment-setup.azcli
               SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-code-deployment-setup.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS" " /home/runner/work/productdev/productdev")
+              echo "Site Credentials are $SITE_CREDENTIALS"
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
 
