@@ -232,6 +232,7 @@ jobs:
 
     - name: 'Push workflow file to webapp repo'
       run: |
+        cd webapp
         commitMessage="Continuous Integration Build Artifacts"
         commitAuthor="Continuous Integration"
         pwd
