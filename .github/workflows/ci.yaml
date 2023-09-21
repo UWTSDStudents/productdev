@@ -227,8 +227,6 @@ jobs:
         cd webapp
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
-        pwd
-        ls .github/workflows
 
     - name: 'Commit workflow file to webapp repo'
       run: |
@@ -237,6 +235,7 @@ jobs:
         commitAuthor="Continuous Integration"
         pwd
         ls .github/workflows
+        echo "Branch: ${{github.ref}}"
         # Push the updated workflow file to the webapp repo
         # Safe directory: there is a security risk if the .git is not owned by the current user.
         # The workaround provided by git is to add the current folder to the safe.directory global
