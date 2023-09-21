@@ -181,8 +181,7 @@ jobs:
 
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam
 
-    # Create a service principal for the web app with the site credenitals
-    # Mask the credentials so they are not shown in workflow logs
+    # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
     - if: ${{env.existing_site_creds == ''}}
       name: 'Create the site credentials'
@@ -190,12 +189,29 @@ jobs:
       id: site-creds
       with:
           inlineScript: |
-              chmod +x ./bicep_modules/cmd-scripts/web-app-code-deployment-setup.azcli
+              chmod +x ./bicep_modules/cmd-scripts/*.azcli
+              dos2unix ./bicep_modules/cmd-scripts/*.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
-              SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-code-deployment-setup.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS" " /home/runner/work/productdev/productdev")
+              SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
               echo "Site Credentials are $SITE_CREDENTIALS"
+              # Mask the credentials so they are not shown in workflow logs
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
+
+              cd webapp
+              mkdir -p .github/workflows
+              ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS"
+
+              # Push the updated workflow file to the webapp repo
+              # Safe directory: there is a security risk if the .git is not owned by the current user.
+              # The workaround provided by git is to add the current folder to the safe.directory global
+              # variable, so that git will regard the folder as safe.
+              #git config --global --add safe.directory /home/runner/work/productdev/productdev/webapp
+              git config --global user.name $commitAuthor
+              git config --global user.email "username@users.noreply.github.com"
+              git add .github/workflows/cd.yaml
+              git commit -m $commitMessage
+              git push
 
     # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
     # Note: you will need to add a workflow file to the repo to use the secret
@@ -209,8 +225,7 @@ jobs:
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
 
-    # We have to enable code deployment having setup the Azure Site Credentials, to prevent an error
-    # since Azure pulls the code from GitHub immediately.
+    # This step is not strictly necessary since we manually pushed a wrokf
     - name: 'Enable code deployment from GitHub'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
       uses: azure/arm-deploy@v1
