@@ -250,7 +250,7 @@ jobs:
         echo "Pull code"
         git remote update
         git fetch
-        git check --track origin/main
+        git checkout --track origin/main
         echo "Add the workflow file"
         git add .github/workflows/cd.yaml
         echo "Commit the workflow file"
