@@ -101,6 +101,7 @@ jobs:
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-using-secrets
     env:
       existing_site_creds: ${{secrets.AZURE_CREDENTIALS}}  
+      site_creds_secret: AZURE_CREDENTIALS
     
     steps:
       # Checkout the web app code repo
@@ -184,7 +185,7 @@ jobs:
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
     - if: ${{env.existing_site_creds == ''}}
-      name: 'Create the site credentials'
+      name: 'Create the site credentials and web app workflow file'
       uses: azure/CLI@v1 
       id: site-creds
       with:
@@ -201,7 +202,7 @@ jobs:
               cd webapp
               mkdir -p .github/workflows
               echo "Create workflow file"
-              ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS"
+              ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
 
               echo "Push workflow file to webapp repo"
               # Push the updated workflow file to the webapp repo
@@ -222,7 +223,7 @@ jobs:
       uses: gliech/create-github-secret-action@v1
       id: store-site-creds
       with:
-        name: AZURE_CREDENTIALS
+        name: ${{env.site_creds_secret}}
         # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
