@@ -185,13 +185,13 @@ jobs:
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
     - if: ${{env.existing_site_creds == ''}}
-      name: 'Create the site credentials and web app workflow file'
+      name: 'Create the site credentials'
       uses: azure/CLI@v1 
       id: site-creds
       with:
           inlineScript: |
-              chmod +x ./bicep_modules/cmd-scripts/*.azcli
-              dos2unix ./bicep_modules/cmd-scripts/*.azcli
+              chmod +x ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
+              dos2unix ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
               SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
               # Mask the credentials so they are not shown in workflow logs
@@ -217,6 +217,8 @@ jobs:
 
     - name: 'Create workflow file for web app code deployment'
       run: |
+        chmod +x ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli
+        dos2unix ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli
         cd webapp
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
