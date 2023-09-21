@@ -193,15 +193,17 @@ jobs:
               dos2unix ./bicep_modules/cmd-scripts/*.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
               SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
-              echo "Site Credentials are $SITE_CREDENTIALS"
               # Mask the credentials so they are not shown in workflow logs
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
 
+              echo "Cd webapp"
               cd webapp
               mkdir -p .github/workflows
+              echo "Create workflow file"
               ./bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} "AZURE_CREDENTIALS"
 
+              echo "Push workflow file to webapp repo"
               # Push the updated workflow file to the webapp repo
               # Safe directory: there is a security risk if the .git is not owned by the current user.
               # The workaround provided by git is to add the current folder to the safe.directory global
