@@ -225,40 +225,32 @@ jobs:
 
     - name: 'Create workflow file for web api code deployment'
       run: |
-        cd webapi
+        mkdir updated_webapi
+        cd updated_webapi
+        echo "Clone the webapi repo"
+        git clone https://github.com/UWTSDStudents/productwebapi.git
+        git add remote origin https://github.com/UWTSDStudents/productwebapi.git
+        git config --global user.name $commitAuthor
+        git config --global user.email "username@users.noreply.github.com"
+        echo "Create the workflow file"
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
+        echo "Stage the workflow file"
+        git add .github/workflows/cd.yaml
 
     - name: 'Commit workflow file to webapi repo'
       if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       run: |
-        cd webapi
-        pwd
-        ls .github/workflows
-        rm -rf .git
-        git init
-        git add remote origin https://github.com/UWTSDStudents/productwebapi.git
-        git checkout -b main
-        echo "Branch: ${{github.ref}}"
-        # Push the updated workflow file to the webapp repo
-        # Safe directory: there is a security risk if the .git is not owned by the current user.
-        # The workaround provided by git is to add the current folder to the safe.directory global
-        # variable, so that git will regard the folder as safe.
         # Set the git commit message and author
+        cd updated_webapi
         commitMessage="Continuous Integration Build Artifacts"
         commitAuthor="Continuous Integration"
-        #git config --global --add safe.directory /home/runner/work/productdev/productdev/webapp
-        git config --global user.name $commitAuthor
-        git config --global user.email "username@users.noreply.github.com"
-        echo "Pull code"
-        git pull origin main
-        echo "Add the workflow file"
-        git add .github/workflows/cd.yaml
         echo "Commit the workflow file"
         git commit -m $commitMessage
+        echo "Push the workflow file to the webapi repo"
         git push origin main
 
-    # This step is not strictly necessary since we manually pushed a wrokf
+    # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
       uses: azure/arm-deploy@v1
