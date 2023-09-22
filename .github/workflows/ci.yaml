@@ -261,15 +261,6 @@ jobs:
     #   if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
     #   with:
     #     github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN}}
-
-    - name: 'Set the GitHub token'
-      uses: azure/CLI@v1 
-      id: set-github-token
-      with:
-          inlineScript: |
-            az resource update \
-            --ids "/subscriptions/${{secrets.AZURE_SUBSCRIPTION_ID}}/resourceGroups/${{vars.AZURE_DEPLOYMENT_RG}}/providers/Microsoft.Web/sourcecontrols/GitHub" \
-            --set properties.token="${{ secrets.PERSONAL_ACCESS_TOKEN}}"
         
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
