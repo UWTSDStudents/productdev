@@ -230,6 +230,8 @@ jobs:
         echo "Clone the webapi repo"
         git clone https://github.com/UWTSDStudents/productwebapi.git
         git add remote origin https://github.com/UWTSDStudents/productwebapi.git
+        commitMessage="Continuous Integration Build Artifacts"
+        commitAuthor="Continuous Integration"
         git config --global user.name $commitAuthor
         git config --global user.email "username@users.noreply.github.com"
         echo "Create the workflow file"
@@ -243,8 +245,6 @@ jobs:
       run: |
         # Set the git commit message and author
         cd updated_webapi
-        commitMessage="Continuous Integration Build Artifacts"
-        commitAuthor="Continuous Integration"
         echo "Commit the workflow file"
         git commit -m $commitMessage
         echo "Push the workflow file to the webapi repo"
