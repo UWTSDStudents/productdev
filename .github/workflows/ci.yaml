@@ -260,7 +260,7 @@ jobs:
         echo organization=$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')  >> $GITHUB_ENV
         echo "Repo "$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')
         echo repo=$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')  >> $GITHUB_ENV
-        echo "Org:"${{env.organization}}
+        echo "Org:"$organization
         echo github_url='https://'${{github.actor}}':'${{secrets.PERSONAL_ACCESS_TOKEN}}'@github.com/'${{env.organization}}'/'${{env.repo}}'.git'  >> $GITHUB_ENV
         echo ${{env.github_url}}
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
