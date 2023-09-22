@@ -45,11 +45,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: 'Checkout GitHub Action'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
         token: ${{secrets.PERSONAL_ACCESS_TOKEN}}  
-      # See notes in the later job about updating bicepparam file
+
+    # See notes in the later job about updating bicepparam file
     - name: 'Update the bicepparam file'
       id: update-bicepparam-file
       run: |
@@ -66,29 +67,29 @@ jobs:
           ./bicep_modules
         retention-days: 1
 
-  # Reusable workflows must be used as jobs, they cannot be added as steps to another job!!
-  bicep-validation-job:
-    needs: bicepparam-update-job
-      # Reusable workflow to lint and validate Bicep file
-    uses: ./.github/workflows/bicep_validation.yaml
-    with:
-      files_artifact: bicepparam-data
-      bicep_file: ./azure.bicep
-      bicep_params_file: ./azure.bicepparam
-    # Workflows that call reusable workflows in the same organization or 
-    # enterprise can use the inherit keyword to implicitly pass the secrets. 
-    # You can then reference them even if they are not explicitly defined here.
-    secrets: inherit
+  # # Reusable workflows must be used as jobs, they cannot be added as steps to another job!!
+  # bicep-validation-job:
+  #   needs: bicepparam-update-job
+  #     # Reusable workflow to lint and validate Bicep file
+  #   uses: ./.github/workflows/bicep_validation.yaml
+  #   with:
+  #     files_artifact: bicepparam-data
+  #     bicep_file: ./azure.bicep
+  #     bicep_params_file: ./azure.bicepparam
+  #   # Workflows that call reusable workflows in the same organization or 
+  #   # enterprise can use the inherit keyword to implicitly pass the secrets. 
+  #   # You can then reference them even if they are not explicitly defined here.
+  #   secrets: inherit
 
-  # Warning: using environment changes the federated credentials required to
-  # something like: repo:UWTSDStudents/productdev:environment:confirm-deployment
-  # for the job. Hence, I've added a specif job for user confirmation.
-  user-confirm-job:
-    runs-on: ubuntu-latest
-    needs: bicep-validation-job
-    environment: confirm-deployment
-    steps:
-    - run: echo "Confirmed deployment"
+  # # Warning: using environment changes the federated credentials required to
+  # # something like: repo:UWTSDStudents/productdev:environment:confirm-deployment
+  # # for the job. Hence, I've added a specif job for user confirmation.
+  # user-confirm-job:
+  #   runs-on: ubuntu-latest
+  #   needs: bicep-validation-job
+  #   environment: confirm-deployment
+  #   steps:
+  #   - run: echo "Confirmed deployment"
      
   # Steps within a job are always executed sequentially!
   # You must add the "confirm-deployment" environment to the GitHub repository and
@@ -108,7 +109,7 @@ jobs:
       # Note: folder and files you checkout, do not persist across jobs.
       # Use a cache, to persist folders and files across jobs.
     - name: 'Checkout GitHub Action'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         # A token is needed to checkout private submodules
@@ -223,32 +224,41 @@ jobs:
     #     git submodule update --init --recursive
     #     git submodule update --recursive --remote  
 
+    - name: 'Checkout webapi repo'
+      uses: actions/checkout@v4
+      with:
+        github-server-url: https://github.com
+        repository: UWTSDStudents/productwebapi
+        ref: main
+        token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
+        path: updated_webapi  # Checkout the repo to a subdirectory
+
     - name: 'Create workflow file for web api code deployment'
       run: |
-        mkdir updated_webapi
         cd updated_webapi
-        echo "Clone the webapi repo"
-        git clone https://github.com/UWTSDStudents/productwebapi.git
-        git add remote origin https://github.com/UWTSDStudents/productwebapi.git
-        commitMessage="Continuous Integration Build Artifacts"
-        commitAuthor="Continuous Integration"
-        git config --global user.name $commitAuthor
-        git config --global user.email "username@users.noreply.github.com"
-        echo "Create the workflow file"
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
-        echo "Stage the workflow file"
-        git add .github/workflows/cd.yaml
 
-    - name: 'Commit workflow file to webapi repo'
-      if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
-      run: |
-        # Set the git commit message and author
-        cd updated_webapi
-        echo "Commit the workflow file"
-        git commit -m $commitMessage
-        echo "Push the workflow file to the webapi repo"
-        git push origin main
+    - name: "Commit and push to webapi repo"
+      uses: EndBug/add-and-commit@v9
+      with:
+        cwd: updated_webapi  # The working directory
+        author_name: Continuous Integration
+        author_email: username@users.noreply.github.com
+        message: Continuous Integration Build Artifacts
+        add: '.github/workflows/cd.yaml'
+        push: true
+
+
+    # - name: 'Commit workflow file to webapi repo'
+    #   if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
+    #   run: |
+    #     # Set the git commit message and author
+    #     cd updated_webapi
+    #     echo "Commit the workflow file"
+    #     git commit -m $commitMessage
+    #     echo "Push the workflow file to the webapi repo"
+    #     git push origin main
 
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
