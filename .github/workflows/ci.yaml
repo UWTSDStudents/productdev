@@ -254,6 +254,7 @@ jobs:
     # Create bicepparam file for the web api manual code deployment
     - name: 'Params to enable web app code deployment'
       id: code-deployment-params
+      shell: bash
       run: |
         organization=$(echo "${{steps.deploy_bicep.outputs.webAppGithubUrl}}" | awk -F/ '{print $4}')
         repo=$(echo "${{steps.deploy_bicep.outputs.webAppGithubUrl}}" | awk -F/ '{print $5}')
