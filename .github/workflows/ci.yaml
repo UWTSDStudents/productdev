@@ -263,29 +263,22 @@ jobs:
     #     github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN}}
 
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
-    # - name: 'Enable code deployment from GitHub'
-    #   # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
-    #   uses: azure/arm-deploy@v1
-    #   id: source-control-bicep
-    #   with:
-    #     scope: resourcegroup
-    #     subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-    #     # This resource group contains the deloyment objects (i.e. deployment history)
-    #     resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
-    #     template: ./bicep_modules/web-app-github-code-deployment.bicep
-    #     parameters: ./web-app-github-code-deployment.bicepparam
-    #     # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
-    #     # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
-    #     # to stream warning or progress info.
-    #     failOnStdErr: false
-    #     deploymentName: enableAppCodeDeployment
-
-    - name: 'Setup manual code deployment'
-      uses: azure/CLI@v1 
-      id: manual-code-deployment
+    - name: 'Enable code deployment from GitHub'
+      # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
+      uses: azure/arm-deploy@v1
+      id: source-control-bicep
       with:
-          inlineScript: |
-            az deployment group create --resource-group ${{vars.AZURE_DEPLOYMENT_RG}} --template-file ./bicep_modules/web-app-github-code-deployment.bicep --parameters ./web-app-github-code-deployment.bicepparam
+        scope: resourcegroup
+        subscriptionId: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        # This resource group contains the deloyment objects (i.e. deployment history)
+        resourceGroupName: ${{vars.AZURE_DEPLOYMENT_RG}}
+        template: ./bicep_modules/web-app-github-code-deployment.bicep
+        parameters: ./web-app-github-code-deployment.bicepparam
+        # failOnStdErr equals false implies that if some data is written to stdErr and return code from 
+        # az-cli is 0, then action will continue execution. Set it to false when stdErr is being used 
+        # to stream warning or progress info.
+        failOnStdErr: false
+        deploymentName: enableAppCodeDeployment
 
     - name: Azure logout
       run: |
