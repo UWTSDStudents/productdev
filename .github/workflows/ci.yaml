@@ -256,10 +256,10 @@ jobs:
       id: code-deployment-params
       shell: bash
       run: |
-        echo "Organization "$(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')
-        echo organization=$(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')  >> $GITHUB_ENV
-        echo "Repo "$(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')
-        echo repo=$(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')  >> $GITHUB_ENV
+        echo "Organization "$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')
+        echo organization=$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')  >> $GITHUB_ENV
+        echo "Repo "$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')
+        echo repo=$(echo ${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')  >> $GITHUB_ENV
         echo "Org:"${{env.organization}}
         echo github_url='https://'${{github.actor}}':'${{secrets.PERSONAL_ACCESS_TOKEN}}'@github.com/'${{env.organization}}'/'${{env.repo}}'.git'  >> $GITHUB_ENV
         echo ${{env.github_url}}
