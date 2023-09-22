@@ -244,10 +244,10 @@ jobs:
     #     add: '.github/workflows/cd.yaml'
     #     push: true
 
-    # - name: 'Update the submodules so we pick up the new workflow file'
-    #   run: |
-    #     git submodule update --init --recursive
-    #     git submodule update --recursive --remote
+    - name: 'Update the submodules so we pick up the new workflow file'
+      run: |
+        git submodule update --init --recursive
+        git submodule update --recursive --remote
         
     - name: 'Create workflow file for web api code deployment'
       run: |
@@ -272,6 +272,7 @@ jobs:
         message: Continuous Integration Build Artifacts
         add: '.github/workflows/cd.yaml'
         push: true        
+        new_branch: main
 
 
     # - name: 'Commit workflow file to webapi repo'
