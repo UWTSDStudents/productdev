@@ -219,51 +219,21 @@ jobs:
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
 
-    # - name: 'Checkout webapi repo'
-    #   uses: actions/checkout@v4
-    #   with:
-    #     github-server-url: https://github.com
-    #     repository: UWTSDStudents/productwebapi
-    #     ref: main
-    #     token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
-    #     path: updated_webapi  # Checkout the repo to a subdirectory
-
-    # - name: 'Create workflow file for web api code deployment'
-    #   run: |
-    #     cd updated_webapi
-    #     mkdir -p .github/workflows
-    #     ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
-
-    # - name: "Commit and push to webapi repo"
-    #   uses: EndBug/add-and-commit@v9
-    #   with:
-    #     cwd: updated_webapi  # The working directory
-    #     author_name: Continuous Integration
-    #     author_email: username@users.noreply.github.com
-    #     message: Continuous Integration Build Artifacts
-    #     add: '.github/workflows/cd.yaml'
-    #     push: true
-
-    - name: 'Update the submodules so we pick up the new workflow file'
+    - name: 'Update the submodules so we can make changes'
+      if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
       run: |
         git submodule update --init --recursive
         git submodule update --recursive --remote
         
     - name: 'Create workflow file for web api code deployment'
+      if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
       run: |
-        cd webapi
+        cd webapi  # Change directory to the webapi repo submodule
         mkdir -p .github/workflows
         ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
 
-    - name: Get Submodule Branch Name
-      id: submodule-branch
-      run: |
-        cd webapi
-        git config --get remote.origin.url
-        branch_name=$(git rev-parse --abbrev-ref HEAD)
-        echo "::set-output name=branch::$branch_name"
-
     - name: "Commit and push to webapi repo"
+      if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       uses: EndBug/add-and-commit@v9
       with:
         cwd: webapi  # The working directory
@@ -272,18 +242,14 @@ jobs:
         message: Continuous Integration Build Artifacts
         add: '.github/workflows/cd.yaml'
         push: true        
-        new_branch: main
+        new_branch: main  # Weirdly, we have to specify 'main' otherwise it doesn't know the branch
+        tag: 'ci:${{github.run_number}}'  # This is the tag that will be created
 
-
-    # - name: 'Commit workflow file to webapi repo'
-    #   if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
-    #   run: |
-    #     # Set the git commit message and author
-    #     cd updated_webapi
-    #     echo "Commit the workflow file"
-    #     git commit -m $commitMessage
-    #     echo "Push the workflow file to the webapi repo"
-    #     git push origin main
+    # An interesting approach to automatically tag the repo
+    # - uses: phish108/autotag-action@v1.1.55
+    #   if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
+    #   with:
+    #     github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN}}
 
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
@@ -302,7 +268,9 @@ jobs:
         # to stream warning or progress info.
         failOnStdErr: false
         deploymentName: enableAppCodeDeployment
-
+      env:
+        GITHUB_TOKEN: ${{secrets.PERSONAL_ACCESS_TOKEN}}
+        
     - name: Azure logout
       run: |
         az logout
