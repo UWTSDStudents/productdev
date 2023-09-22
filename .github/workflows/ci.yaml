@@ -244,10 +244,10 @@ jobs:
     #     add: '.github/workflows/cd.yaml'
     #     push: true
 
-    - name: 'Update the submodules so we pick up the new workflow file'
-      run: |
-        git submodule update --init --recursive
-        git submodule update --recursive --remote
+    # - name: 'Update the submodules so we pick up the new workflow file'
+    #   run: |
+    #     git submodule update --init --recursive
+    #     git submodule update --recursive --remote
         
     - name: 'Create workflow file for web api code deployment'
       run: |
