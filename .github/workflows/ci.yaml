@@ -255,13 +255,14 @@ jobs:
     - name: 'Params to enable web app code deployment'
       id: code-deployment-params
       shell: bash
+      env:
+        organization: $(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $4}')
+        repo: $(${{steps.deploy_bicep.outputs.webAppGithubUrl}} | awk -F/ '{print $5}')
+        github_url: "https://${{github.actor}}:${{secrets.PERSONAL_ACCESS_TOKEN}}@github.com/${{env.organization}}/${{env.repo}}.git" 
       run: |
-        organization=$(echo "${{steps.deploy_bicep.outputs.webAppGithubUrl}}" | awk -F/ '{print $4}')
-        repo=$(echo "${{steps.deploy_bicep.outputs.webAppGithubUrl}}" | awk -F/ '{print $5}')
-        github_url="https://${{github.actor}}:${{secrets.PERSONAL_ACCESS_TOKEN}}@github.com/${{organization}}/${{repo}}.git"
-        echo "Github URL: ${{github_url}}"
+        echo "Github URL: ${{env.github_url}}"
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
-        sed -i 's#<GITHUB_URL>#'${{github_url}}'#g' ./web-app-github-code-deployment.bicepparam
+        sed -i 's#<GITHUB_URL>#'${{env.github_url}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./web-app-github-code-deployment.bicepparam
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam
