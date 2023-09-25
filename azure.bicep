@@ -60,6 +60,7 @@ module app 'bicep_modules/web-app-github-linux.bicep' = {
   }
 }
 
+// NOT REQUIRED
 // In this case, I thought it was more transparent to use create the credentials
 // outside of a Bicep file, such as in the GitHub workflow file, because the
 // resultant site credentials are sensitive and also need to be stored.

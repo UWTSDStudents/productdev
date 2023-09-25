@@ -26,6 +26,19 @@
 # These are created in the repo itself under Settings > Environments > New environment 
 # > Configure environment > Require reviewers > Save protection rules
 
+# ADDITIONAL NOTES:
+# At the start of each workflow job, GitHub automatically creates a unique GITHUB_TOKEN secret to use 
+# in your workflow. You can use the GITHUB_TOKEN to authenticate in the workflow job.
+# When you enable GitHub Actions, GitHub installs a GitHub App on your repository. 
+# The GITHUB_TOKEN secret is a GitHub App installation access token. You can use the installation
+ # access token to authenticate on behalf of the GitHub App installed on your repository.
+ # The token's permissions are limited to the repository that contains your workflow.
+# The token is also available in the github.token context.
+# You can use the GITHUB_TOKEN by using the standard syntax for referencing secrets:
+# ${{ secrets.GITHUB_TOKEN }}.
+# You can change the permissions associated with this token, 
+# see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#setting-the-permissions-of-the-github_token-for-your-repository
+
 name: 'Build and deploy a webapp Bicep infrastructure to Azure'
 
 # Using workload identity federation to authenticate to Azure
@@ -102,7 +115,6 @@ jobs:
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-using-secrets
     env:
       existing_site_creds: ${{secrets.AZURE_CREDENTIALS}}  
-      site_creds_secret: AZURE_CREDENTIALS
     
     steps:
       # Checkout the web app code repo
@@ -203,7 +215,7 @@ jobs:
       uses: gliech/create-github-secret-action@v1
       id: store-site-creds
       with:
-        name: ${{env.site_creds_secret}}
+        name: AZURE_CREDENTIALS
         # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
@@ -219,7 +231,7 @@ jobs:
       run: |
         cd webapi  # Change directory to the webapi repo submodule
         mkdir -p .github/workflows
-        ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} ${{env.site_creds_secret}}
+        ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} 'AZURE_CREDENTIALS'
 
     - name: "Commit and push to webapi repo"
       if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
@@ -261,9 +273,17 @@ jobs:
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
-        sed -i 's/<TOKEN>/'${{secrets.PERSONAL_ACCESS_TOKEN}}'/g' ./web-app-github-code-deployment.bicepparam
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam
-    
+
+    - name: Azure logout
+      run: |
+        az logout    
+
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}        
+        
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
