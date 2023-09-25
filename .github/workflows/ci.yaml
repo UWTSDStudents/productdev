@@ -205,6 +205,7 @@ jobs:
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
               SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
               # Mask the credentials so they are not shown in workflow logs
+              echo "Site credentials "$SITE_CREDENTIALS
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
 
@@ -261,7 +262,7 @@ jobs:
     # - uses: phish108/autotag-action@v1.1.55
     #   if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
     #   with:
-    #     github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN}}
+    #     github-token: ${{secrets.PERSONAL_ACCESS_TOKEN}}
 
     # Create bicepparam file for the web api manual code deployment
     - name: 'Params to enable web app code deployment'
@@ -273,16 +274,7 @@ jobs:
         sed -i 's/<WEB_APP_NAME>/'${{steps.deploy_bicep.outputs.webAppName}}'/g' ./web-app-github-code-deployment.bicepparam
         sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
-    # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam
-
-    - name: Azure logout
-      run: |
-        az logout    
-
-    - name: 'Az CLI login'
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}        
+    # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam       
         
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
