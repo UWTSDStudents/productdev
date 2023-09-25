@@ -203,11 +203,18 @@ jobs:
               chmod +x ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               dos2unix ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
-              SITE_CREDENTIALS=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
+              returned=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SERVICE_PRINCIPAL_ID}} ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
+              IFS=',' read -ra results <<< "$returned"
               # Mask the credentials so they are not shown in workflow logs
+              SITE_CREDENTIALS=${results[0]}
+              echo "Site credentials $SITE_CREDENTIALS"
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
-
+              SITE_CREDENTIALS_JSON=${results[1]}
+              echo "Site credentials json $SITE_CREDENTIALS_JSON"
+              echo "::add-mask::$SITE_CREDENTIALS_JSON"
+              echo SITE_CREDENTIALS_JSON=$SITE_CREDENTIALS_JSON >> $GITHUB_ENV
+              
     # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
     # Note: you will need to add a workflow file to the repo to use the secret
     - if: ${{env.existing_site_creds == ''}}

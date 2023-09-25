@@ -54,3 +54,4 @@ echo "AZURE_DEPLOYMENT_RG=${rgName}"
 # gh secret set AZURE_SUBSCRIPTION_ID --app actions --body 00000000-0000-0000-0000-000000000000
 # gh secret set AZURE_TENANT_ID --app actions --body 00000000-0000-0000-0000-000000000000
 # gh secret set AZURE_CLIENT_ID --app actions --body 00000000-0000-0000-0000-000000000000
+

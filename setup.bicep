@@ -20,6 +20,10 @@ param subscriptionId string // Subscription ID
 @secure()
 param principalId string // Service Principal ID
 
+// @description('GitHub token')
+// @secure()
+// param githubToken string // GitHub token
+
 // Create the resource group
 // Creating it in the setup 
 // Note: if the resource group already exists, this will do nothing
@@ -39,3 +43,19 @@ module spRole 'bicep_modules/resource-group-role-assign.bicep' = {
     roleType: 'Owner'
   }
 }
+
+// Set the GitHub personal access token
+// If you fail to add the GitHub token you may get an error
+// "Cannot find SourceControlToken with name GitHub"
+// when using Service Principal to setup continuous deployment e.g.
+// a webapp (service)
+// https://github-wiki-see.page/m/veleek/kudu/wiki/Investigating-continuous-deployment
+// https://github.com/projectkudu/ARMClient/wiki/Update-SourceControlTokens
+// Note: you need tenant level permissions to store the token
+// module token './bicep_modules/github-token.bicep' = {
+//   name: 'token-module'
+//   scope: tenant()
+//   params: {
+//     token: githubToken
+//   }
+// }
