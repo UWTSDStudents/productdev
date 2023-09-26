@@ -113,8 +113,8 @@ jobs:
     # We cannot direclty use a secret in a conditional expression, so we need to use an environment variable.
     # If a secret has not been set, the return value of an expression referencing the secret will be an empty string.
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-using-secrets
-    env:
-      existing_site_creds: ${{secrets.AZURE_CREDENTIALS}}  
+    # env:
+    #   existing_site_creds: ${{secrets.AZURE_WEBAPP_PUBLISH_PROFILE}}  
     
     steps:
       # Checkout the web app code repo
@@ -208,19 +208,17 @@ jobs:
               SITE_CREDENTIALS=${results[0]}
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
-              SITE_CREDENTIALS_JSON=${results[1]}
-              echo "::add-mask::$SITE_CREDENTIALS_JSON"
-              echo SITE_CREDENTIALS_JSON=$SITE_CREDENTIALS_JSON >> $GITHUB_ENV
+              AZURE_CREDENTIALS=${results[1]}
+              echo "::add-mask::$AZURE_CREDENTIALS"
+              echo AZURE_CREDENTIALS=$AZURE_CREDENTIALS >> $GITHUB_ENV
               
     # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
     # Note: you will need to add a workflow file to the repo to use the secret
-    - if: ${{env.existing_site_creds == ''}}
-      name: 'Store the site credentials as GitHub secret'
+    - name: 'Store the site credentials as GitHub secret'
       uses: gliech/create-github-secret-action@v1
       id: store-site-creds
       with:
-        name: AZURE_CREDENTIALS
-        # value: ${{ steps.deploy_bicep.outputs.creds.site_creds }}
+        name: AZURE_WEBAPP_PUBLISH_PROFILE
         value: ${{env.SITE_CREDENTIALS}}
         pa_token: ${{secrets.PERSONAL_ACCESS_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
         location: "UWTSDStudents/productwebapi" 
@@ -236,7 +234,7 @@ jobs:
       run: |
         cd webapi  # Change directory to the webapi repo submodule
         mkdir -p .github/workflows
-        ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} 'AZURE_CREDENTIALS'
+        ../bicep_modules/cmd-scripts/create-web-app-nodejs-worflow.azcli ${{steps.deploy_bicep.outputs.webAppName}} 'AZURE_WEBAPP_PUBLISH_PROFILE'
 
     - name: "Commit and push to webapi repo"
       if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
@@ -287,7 +285,7 @@ jobs:
     - name: 'Az CLI login'
       uses: azure/login@v1
       with:
-        creds: ${{ env.SITE_CREDENTIALS_JSON }}
+        creds: ${{ env.AZURE_CREDENTIALS }}
 
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'

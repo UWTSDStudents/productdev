@@ -76,7 +76,7 @@
 #       uses: gliech/create-github-secret-action@v1
 #       id: store-site-creds
 #       with:
-#         name: AZURE_CREDENTIALS
+#         name: AZURE_WEBAPP_PUBLISH_PROFILE
 #         # value: ${{ steps.site-creds.outputs.SITE_CREDENTIALS }}
 #         value: ${{ env.SITE_CREDENTIALS }}
 #         pa_token: ${{secrets.API_GITHUB_PERSONAL_TOKEN}} # <PERSONAL ACCESS TOKEN other repo>…requires admin:org scope
@@ -94,7 +94,7 @@
 #               mkdir -p .github/workflows
 #               curl  https://raw.githubusercontent.com/UWTSDSoACInfrastructure/actions-workflow-templates/master/AppService/$os/$templateName --output .github/workflows/ci.yaml
 #               branch=master
-#               publishProfile=AZURE_CREDENTIALS
+#               publishProfile=AZURE_WEBAPP_PUBLISH_PROFILE
 #               slotName=production
 #               version=18.x
 #               sed -i 's/${web-app-name}/'$webAppName'/g' .github/workflows/cd.yaml

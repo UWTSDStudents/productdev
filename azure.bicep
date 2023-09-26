@@ -75,10 +75,10 @@ module app 'bicep_modules/web-app-github-linux.bicep' = {
 //   properties: {
 //     azCliVersion: '2.26.2'
 //     scriptContent: '''
-//       siteCreds=$(./web-app-code-deployment-setup.azcli $principalId ${subscription().id} $rgName $webappName "AZURE_CREDENTIALS")
+//       siteCreds=$(./web-app-code-deployment-setup.azcli $principalId ${subscription().id} $rgName $webappName "AZURE_WEBAPP_PUBLISH_PROFILE")
 //       echo '{ "site_creds": ${siteCreds} }' > $AZ_SCRIPTS_OUTPUT_PATH
 //     '''
-//     arguments: '$principalId ${subscription().id} $rgName $webappName "AZURE_CREDENTIALS"'
+//     arguments: '$principalId ${subscription().id} $rgName $webappName "AZURE_WEBAPP_PUBLISH_PROFILE"'
 //     supportingScriptUris: [
 //       'https://raw.githubusercontent.com/UWTSDSoACInfrastructure/BicepModules/main/cmd-scripts/web-app-code-deployment-setup.azcli', 'https://raw.githubusercontent.com/UWTSDSoACInfrastructure/BicepModules/main/cmd-scripts/web-app-site-creds.azcli'
 //     ]
@@ -98,4 +98,3 @@ output webAppName string = webAppName
 output webAppGithubUrl string = webAppGithubUrl
 output webAppBranch string = webAppBranch
 output webAppRuntime string = webAppRuntime
-//output creds object = runCodeDeploy.properties.outputs
