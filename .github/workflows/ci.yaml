@@ -194,8 +194,7 @@ jobs:
 
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
-    - if: ${{env.existing_site_creds == ''}}
-      name: 'Create the site credentials'
+    - name: 'Create or read the site credentials'
       uses: azure/CLI@v1 
       id: site-creds
       with:
@@ -207,11 +206,9 @@ jobs:
               IFS=',' read -ra results <<< "$returned"
               # Mask the credentials so they are not shown in workflow logs
               SITE_CREDENTIALS=${results[0]}
-              echo "Site credentials $SITE_CREDENTIALS"
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
               SITE_CREDENTIALS_JSON=${results[1]}
-              echo "Site credentials json $SITE_CREDENTIALS_JSON"
               echo "::add-mask::$SITE_CREDENTIALS_JSON"
               echo SITE_CREDENTIALS_JSON=$SITE_CREDENTIALS_JSON >> $GITHUB_ENV
               
@@ -282,7 +279,16 @@ jobs:
         sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam       
-        
+ 
+    - name: Azure logout
+      run: |
+        az logout
+
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.SITE_CREDENTIALS_JSON }}
+
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
