@@ -194,6 +194,22 @@ jobs:
 
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
+    - name: 'Create the azure credentials'
+      uses: azure/CLI@v1 
+      id: login-creds
+      with:
+          inlineScript: |
+              chmod +x ./bicep_modules/cmd-scripts/create-rbac-sp.azcli
+              dos2unix ./bicep_modules/cmd-scripts/create-rbac-sp.azcli
+              echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
+              loginCreds=$(./bicep_modules/cmd-scripts/create-rbac-sp.azcli "webapp" ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
+              # Mask the credentials so they are not shown in workflow logs
+              AZURE_CREDENTIALS="$loginCreds"
+              echo "::add-mask::$AZURE_CREDENTIALS"
+              echo AZURE_CREDENTIALS=$AZURE_CREDENTIALS >> $GITHUB_ENV
+
+    # Create the site credentials and push a workflow file to the repo where the web app code is stored
+    # These credentials are required to enable code deployment from GitHub
     - name: 'Create or read the site credentials'
       uses: azure/CLI@v1 
       id: site-creds
@@ -202,16 +218,12 @@ jobs:
               chmod +x ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               dos2unix ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
-              returned=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{secrets.AZURE_SUBSCRIPTION_ID}} ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
-              IFS=',' read -ra results <<< "$returned"
+              siteCreds=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
               # Mask the credentials so they are not shown in workflow logs
-              SITE_CREDENTIALS=${results[0]}
+              SITE_CREDENTIALS="$siteCreds"
               echo "::add-mask::$SITE_CREDENTIALS"
               echo SITE_CREDENTIALS=$SITE_CREDENTIALS >> $GITHUB_ENV
-              AZURE_CREDENTIALS=${results[1]}
-              echo "::add-mask::$AZURE_CREDENTIALS"
-              echo AZURE_CREDENTIALS=$AZURE_CREDENTIALS >> $GITHUB_ENV
-              
+          
     # Now store the site credentials as a GitHub secret in the repo where the web app code is stored
     # Note: you will need to add a workflow file to the repo to use the secret
     - name: 'Store the site credentials as GitHub secret'
