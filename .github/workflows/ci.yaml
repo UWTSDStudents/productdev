@@ -307,6 +307,8 @@ jobs:
         # to stream warning or progress info.
         failOnStdErr: false
         deploymentName: enableAppCodeDeployment
+      env:
+        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     - name: Azure logout
       run: |
