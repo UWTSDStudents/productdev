@@ -289,7 +289,14 @@ jobs:
         sed -i 's#<GITHUB_URL>#'${{steps.deploy_bicep.outputs.webAppGithubUrl}}'#g' ./web-app-github-code-deployment.bicepparam
         sed -i 's/<BRANCH>/'${{steps.deploy_bicep.outputs.webAppBranch}}'/g' ./web-app-github-code-deployment.bicepparam
     # sed -i 's/<RUNTIME>/'"${{steps.deploy_bicep.outputs.webAppRuntime}}"'/g' ./web-app-github-code-deployment.bicepparam       
- 
+
+    - name: 'Store the PAT'
+      uses: azure/CLI@v1 
+      id: change-github-token
+      with:
+          inlineScript: |
+              az webapp deployment github-actions add --repo "githubUser/githubRepo" -g ${{vars.AZURE_DEPLOYMENT_RG}} -n ${{steps.deploy_bicep.outputs.webAppName}}" --token ${{secrets.PERSONAL_ACCESS_TOKEN}}
+
     # This step is not strictly necessary since we manually pushed a workflow to the web api repo
     - name: 'Enable code deployment from GitHub'
       # See https://github.com/marketplace/actions/deploy-azure-resource-manager-arm-template
@@ -307,8 +314,6 @@ jobs:
         # to stream warning or progress info.
         failOnStdErr: false
         deploymentName: enableAppCodeDeployment
-      env:
-        GitHub: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     - name: Azure logout
       run: |
