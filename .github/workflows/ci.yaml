@@ -308,7 +308,7 @@ jobs:
         failOnStdErr: false
         deploymentName: enableAppCodeDeployment
       env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        GitHub: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     - name: Azure logout
       run: |
