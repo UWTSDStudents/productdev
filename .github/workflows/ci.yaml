@@ -203,9 +203,6 @@ jobs:
       run: |
         workflow_name=$(./bicep_modules/cmd-scripts/get-last-file-created.sh ./webapp/.github/workflows/azure-static-web-apps-*.yml)
         echo "Workflow name is $workflow_name"
-        ls 
-        ls -al ./webapp
-        ls -al ./webapp/.github
         if [ -n "$workflow_name" ]; then mv './webapp/.github/workflows/'${workflow_name} './webapp/.github/workflows/swa-${{steps.deploy_bicep.outputs.webAppName}}.yml'; fi   
     - if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       name: 'Commit and push renamed workflow file to webapp repo'
@@ -218,8 +215,6 @@ jobs:
         add: '.github/workflows'
         push: true        
         new_branch: main  # Weirdly, we have to specify 'main' otherwise it doesn't know the branch
-        tag: 'ci:${{github.run_number}}'  # This is the tag that will be created
-
 
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
