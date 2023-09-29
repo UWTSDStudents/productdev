@@ -136,6 +136,8 @@ jobs:
         # Clean scripts and make them executable.
         chmod +x ./bicep_modules/cmd-scripts/*.azcli
         dos2unix ./bicep_modules/cmd-scripts/*.azcli
+        chmod +x ./bicep_modules/cmd-scripts/*.sh
+        dos2unix ./bicep_modules/cmd-scripts/*.sh
 
     - name: 'Az CLI login'
       uses: azure/login@v1
@@ -207,7 +209,7 @@ jobs:
         cwd: webapp  # The working directory
         author_name: Continuous Integration
         author_email: username@users.noreply.github.com
-        message: Continuous Integration Build Artifacts
+        message: Rename workflow file to include web app name
         add: '.github/workflows'
         push: true        
         new_branch: main  # Weirdly, we have to specify 'main' otherwise it doesn't know the branch
