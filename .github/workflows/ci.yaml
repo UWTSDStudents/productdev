@@ -202,7 +202,10 @@ jobs:
       name: 'Rename static web app workflow file name'
       run: |
         workflow_name=$(./bicep_modules/cmd-scripts/get-last-file-created.sh ./webapp/.github/workflows/azure-static-web-apps-*.yml)
-        if [ -n "$workflow_name" ]; mv './webapp/.github/workflows/'${workflow_name} './webapp/.github/workflows/swa-${{steps.deploy_bicep.outputs.webAppName}}.yml'; fi   
+        echo "Workflow name is $workflow_name"
+        ls 
+        ls ./webapp/.github/workflows
+        if [ -n "$workflow_name" ]; then mv './webapp/.github/workflows/'${workflow_name} './webapp/.github/workflows/swa-${{steps.deploy_bicep.outputs.webAppName}}.yml'; fi   
     - if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       name: 'Commit and push renamed workflow file to webapp repo'
       uses: EndBug/add-and-commit@v9
