@@ -42,7 +42,7 @@ module swa 'bicep_modules/static-web-app.bicep' = {
      githubUrl: swaGithubUrl
      branch: swaBranch
      githubToken: swaGithubToken
-     appLocation: '/html'
+     appLocation: '/'
   }
 }
 
