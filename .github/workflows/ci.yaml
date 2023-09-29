@@ -192,6 +192,28 @@ jobs:
         failOnStdErr: false
         deploymentName: infrastructureDeployment
 
+    # The workflow created for the static web app is always named using the following format:
+    # azure-static-web-apps-<RANDOM_NAME>.yml
+    # See: https://learn.microsoft.com/en-us/azure/static-web-apps/build-configuration?tabs=github-actions#file-name-and-location
+    # This is a bit painful since you can end up with lots of workflow files in the repo, so we want to rename it.
+    - if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
+      name: 'Rename static web app workflow file name'
+      run: |
+        workflow_name=$(./bicep_modules/cmd-scripts/get-last-file-created.sh ./webapp/.github/workflows/azure-static-web-apps-*.yml)
+        mv ./webapp/.github/workflows/$workflow_name ./webapp/.github/workflows/swa-${{steps.deploy_bicep.outputs.webAppName}}.yml   
+    - if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
+      uses: EndBug/add-and-commit@v9
+      with:
+        cwd: webapp  # The working directory
+        author_name: Continuous Integration
+        author_email: username@users.noreply.github.com
+        message: Continuous Integration Build Artifacts
+        add: '.github/workflows'
+        push: true        
+        new_branch: main  # Weirdly, we have to specify 'main' otherwise it doesn't know the branch
+        tag: 'ci:${{github.run_number}}'  # This is the tag that will be created
+
+
     # Create the site credentials and push a workflow file to the repo where the web app code is stored
     # These credentials are required to enable code deployment from GitHub
     # - name: 'Create the azure credentials'
@@ -215,8 +237,6 @@ jobs:
       id: site-creds
       with:
           inlineScript: |
-              chmod +x ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
-              dos2unix ./bicep_modules/cmd-scripts/web-app-site-creds.azcli
               echo "Resource Group ${{vars.AZURE_DEPLOYMENT_RG}} and webapp name ${{steps.deploy_bicep.outputs.webAppName}}"
               siteCreds=$(./bicep_modules/cmd-scripts/web-app-site-creds.azcli ${{vars.AZURE_DEPLOYMENT_RG}} ${{steps.deploy_bicep.outputs.webAppName}})
               # Mask the credentials so they are not shown in workflow logs
