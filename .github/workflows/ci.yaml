@@ -201,7 +201,8 @@ jobs:
     - if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push event
       name: 'Rename static web app workflow file name'
       run: |
-        git submodule update --remote   # Fetch the workflow file from the webapp repo
+        git submodule update --init --recursive
+        git submodule update --recursive --remote   # Fetch the workflow file from the webapp repo
         workflow_name=$(./bicep_modules/cmd-scripts/get-last-file-created.sh ./webapp/.github/workflows/azure-static-web-apps-*.yml)
         echo "Workflow name is $workflow_name"
         if [ -n "$workflow_name" ]; then mv './webapp/.github/workflows/'${workflow_name} './webapp/.github/workflows/swa-${{steps.deploy_bicep.outputs.webAppName}}.yml'; fi   
