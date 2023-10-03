@@ -264,8 +264,10 @@ jobs:
     - name: 'Update the submodules so we can make changes'
       if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
       run: |
-        git submodule update --init --recursive
-        git submodule update --recursive --remote --merge
+        cd webapi
+        git checkout main
+        git pull origin main
+        cd ..
         
     - name: 'Create workflow file for web api code deployment'
       if: github.event_name == 'push'    # Only run this step if the workflow was triggered by a push even
