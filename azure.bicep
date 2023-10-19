@@ -61,6 +61,20 @@ module app 'bicep_modules/web-app-github-linux.bicep' = {
   }
 }
 
+var newAppSettings = {
+  MIKE_TEST1:12
+  MIKE_TEST2:'Hi'
+}
+
+module appSettings 'bicep_modules/web-app-settings.bicep' = {
+  name: '${webAppName}-settings-module'
+  params: {
+    name: webAppName
+    appSettings: newAppSettings
+    currentAppSettings: app.outputs.appSettings
+  }
+}
+
 // NOT REQUIRED
 // In this case, I thought it was more transparent to use create the credentials
 // outside of a Bicep file, such as in the GitHub workflow file, because the
@@ -99,8 +113,4 @@ output webAppName string = webAppName
 output webAppGithubUrl string = webAppGithubUrl
 output webAppBranch string = webAppBranch
 output webAppRuntime string = webAppRuntime
-
-// If we want to modify the web app settings later, then we should return
-// the current settings
-output webAppSettings object = app.outputs.appSettings
 
