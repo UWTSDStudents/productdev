@@ -99,3 +99,8 @@ output webAppName string = webAppName
 output webAppGithubUrl string = webAppGithubUrl
 output webAppBranch string = webAppBranch
 output webAppRuntime string = webAppRuntime
+
+// If we want to modify the web app settings later, then we should return
+// the current settings
+output webAppSettings object = app.outputs.appSettings
+
